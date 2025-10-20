@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
-import { Alert, AlertDescription } from "./ui/alert";
-import { Filter, Clock, MapPin, AlertTriangle } from "lucide-react";
+
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { Filter, Clock, MapPin, AlertTriangle } from 'lucide-react-native';
 
 interface AlertItem {
   id: number;
@@ -19,180 +18,219 @@ interface AlertsListProps {
 }
 
 export default function AlertsList({ alerts, onAlertClick }: AlertsListProps) {
-  const [filterSeverity, setFilterSeverity] = useState("all");
+  const [filterSeverity, setFilterSeverity] = useState('all');
 
   const filteredAlerts = alerts.filter(alert => {
-    const matchesSeverity = filterSeverity === "all" || alert.severity === filterSeverity;
-    return matchesSeverity;
+    return filterSeverity === 'all' || alert.severity === filterSeverity;
   });
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case "high":
-        return <AlertTriangle className="h-4 w-4 text-red-400" />;
-      case "moderate":
-        return <AlertTriangle className="h-4 w-4 text-amber-400" />;
-      case "low":
-        return <Clock className="h-4 w-4 text-emerald-400" />;
+      case 'high':
+        return <AlertTriangle size={16} color="#f87171" />;
+      case 'moderate':
+        return <AlertTriangle size={16} color="#fbbf24" />;
       default:
-        return <Clock className="h-4 w-4 text-slate-400" />;
+        return <Clock size={16} color="#34d399" />;
     }
   };
 
-  const getBadgeVariant = (severity: string) => {
+  const getBadgeStyle = (severity: string) => {
     switch (severity) {
-      case "high":
-        return "destructive";
-      case "moderate":
-        return "secondary";
-      case "low":
-        return "outline";
+      case 'high':
+        return styles.badgeHigh;
+      case 'moderate':
+        return styles.badgeModerate;
       default:
-        return "outline";
+        return styles.badgeLow;
     }
   };
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
-      {/* Enhanced Filter */}
-      <div className="flex gap-2">
-        <Button
-          variant={filterSeverity === "all" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setFilterSeverity("all")}
-          className={`flex-1 transition-all duration-300 hover:scale-105 ${
-            filterSeverity === "all" 
-              ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-500/25" 
-              : "bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:border-blue-500/50 backdrop-blur-sm"
-          }`}
+    <View style={styles.container}>
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterButton, filterSeverity === 'all' && styles.activeFilterButton]}
+          onPress={() => setFilterSeverity('all')}
         >
-          All
-        </Button>
-        <Button
-          variant={filterSeverity === "high" ? "destructive" : "outline"}
-          size="sm"
-          onClick={() => setFilterSeverity("high")}
-          className={`flex-1 transition-all duration-300 hover:scale-105 ${
-            filterSeverity === "high" 
-              ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/25" 
-              : "bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:border-red-500/50 backdrop-blur-sm"
-          }`}
+          <Text style={[styles.filterButtonText, filterSeverity === 'all' && styles.activeFilterButtonText]}>All</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterButton, filterSeverity === 'high' && styles.activeFilterButton]}
+          onPress={() => setFilterSeverity('high')}
         >
-          Critical
-        </Button>
-        <Button
-          variant={filterSeverity === "moderate" ? "secondary" : "outline"}
-          size="sm"
-          onClick={() => setFilterSeverity("moderate")}
-          className={`flex-1 transition-all duration-300 hover:scale-105 ${
-            filterSeverity === "moderate" 
-              ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg shadow-amber-500/25" 
-              : "bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:border-amber-500/50 backdrop-blur-sm"
-          }`}
+          <Text style={[styles.filterButtonText, filterSeverity === 'high' && styles.activeFilterButtonText]}>Critical</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterButton, filterSeverity === 'moderate' && styles.activeFilterButton]}
+          onPress={() => setFilterSeverity('moderate')}
         >
-          Moderate
-        </Button>
-      </div>
+          <Text style={[styles.filterButtonText, filterSeverity === 'moderate' && styles.activeFilterButtonText]}>Moderate</Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* Alerts List */}
-      <div className="flex-1 overflow-y-auto space-y-3 scrollbar-hide">
+      <ScrollView style={styles.list}>
         {filteredAlerts.length === 0 ? (
-          <div className="text-center py-12 text-slate-400">
-            <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-slate-700/50">
-              <Filter className="h-8 w-8 text-slate-500" />
-            </div>
-            <p className="font-medium">No alerts match your criteria</p>
-            <p className="text-xs text-slate-500 mt-1">Try adjusting your filter settings</p>
-          </div>
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconContainer}>
+              <Filter size={32} color="#64748b" />
+            </View>
+            <Text style={styles.emptyText}>No alerts match your criteria</Text>
+            <Text style={styles.emptySubtext}>Try adjusting your filter settings</Text>
+          </View>
         ) : (
-          filteredAlerts.map((alert, index) => {
-            const severityConfig = {
-              high: {
-                borderColor: "border-l-red-500",
-                bgColor: "bg-gradient-to-r from-red-900/20 via-slate-800/50 to-slate-800/30",
-                iconBg: "bg-red-500/20",
-                iconColor: "text-red-400",
-                glowColor: "shadow-red-500/10"
-              },
-              moderate: {
-                borderColor: "border-l-amber-500",
-                bgColor: "bg-gradient-to-r from-amber-900/20 via-slate-800/50 to-slate-800/30",
-                iconBg: "bg-amber-500/20",
-                iconColor: "text-amber-400",
-                glowColor: "shadow-amber-500/10"
-              },
-              low: {
-                borderColor: "border-l-emerald-500",
-                bgColor: "bg-gradient-to-r from-emerald-900/20 via-slate-800/50 to-slate-800/30",
-                iconBg: "bg-emerald-500/20",
-                iconColor: "text-emerald-400",
-                glowColor: "shadow-emerald-500/10"
-              }
-            };
-
-            const config = severityConfig[alert.severity as keyof typeof severityConfig] || severityConfig.low;
-
-            return (
-              <Alert 
-                key={alert.id} 
-                className={`border-l-4 ${config.borderColor} ${config.bgColor} border border-slate-700/50 backdrop-blur-sm hover:bg-slate-700/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${config.glowColor} animate-in slide-in-from-left-3 fade-in duration-500`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <AlertDescription>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-start gap-3">
-                        <div className={`w-8 h-8 ${config.iconBg} rounded-lg flex items-center justify-center backdrop-blur-sm`}>
-                          {getSeverityIcon(alert.severity)}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-sm text-slate-100">{alert.title}</p>
-                          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{alert.description}</p>
-                        </div>
-                      </div>
-                      <Badge 
-                        variant={getBadgeVariant(alert.severity)}
-                        className={`text-xs ml-2 ${
-                          alert.severity === 'high' ? 'bg-gradient-to-r from-red-600 to-red-700 text-white border-red-500/50' :
-                          alert.severity === 'moderate' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-500/50' :
-                          'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500/50'
-                        } shadow-lg backdrop-blur-sm`}
-                      >
-                        {alert.severity}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-slate-400 flex-1 min-w-0">
-                        <MapPin className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{alert.location}</span>
-                        {(alert as any).region && (
-                          <span className="text-[10px] bg-slate-700/50 px-1.5 py-0.5 rounded text-slate-400 whitespace-nowrap">
-                            {(alert as any).region}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 text-slate-500 ml-2 flex-shrink-0">
-                        <Clock className="h-3 w-3" />
-                        <span className="whitespace-nowrap">{alert.time}</span>
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => onAlertClick?.(alert.id)}
-                      className="w-full bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-gradient-to-r hover:from-blue-600 hover:to-cyan-600 hover:text-white hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 backdrop-blur-sm"
-                    >
-                      Investigate Alert
-                    </Button>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            );
-          })
+          filteredAlerts.map(alert => (
+            <View key={alert.id} style={styles.alertItem}>
+              <View style={styles.alertHeader}>
+                <View style={styles.alertTitleContainer}>
+                  <View style={[styles.severityIconContainer, getBadgeStyle(alert.severity)]}>
+                    {getSeverityIcon(alert.severity)}
+                  </View>
+                  <Text style={styles.alertTitle}>{alert.title}</Text>
+                </View>
+                <Text style={[styles.badge, getBadgeStyle(alert.severity)]}>{alert.severity}</Text>
+              </View>
+              <Text style={styles.alertDescription}>{alert.description}</Text>
+              <View style={styles.alertFooter}>
+                <View style={styles.footerInfo}>
+                  <MapPin size={12} color="#94a3b8" />
+                  <Text style={styles.footerText}>{alert.location}</Text>
+                </View>
+                <View style={styles.footerInfo}>
+                  <Clock size={12} color="#94a3b8" />
+                  <Text style={styles.footerText}>{alert.time}</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.investigateButton} onPress={() => onAlertClick?.(alert.id)}>
+                <Text style={styles.investigateButtonText}>Investigate Alert</Text>
+              </TouchableOpacity>
+            </View>
+          ))
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  filterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#334155',
+  },
+  activeFilterButton: {
+    backgroundColor: '#2563eb',
+  },
+  filterButtonText: {
+    color: 'white',
+  },
+  activeFilterButtonText: {
+    fontWeight: 'bold',
+  },
+  list: {
+    flex: 1,
+  },
+  alertItem: {
+    backgroundColor: '#1e293b',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  alertHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  alertTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  severityIconContainer: {
+    padding: 4,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  badge: {
+    fontSize: 12,
+    color: 'white',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    textTransform: 'capitalize',
+  },
+  badgeHigh: {
+    backgroundColor: '#ef4444',
+  },
+  badgeModerate: {
+    backgroundColor: '#f97316',
+  },
+  badgeLow: {
+    backgroundColor: '#10b981',
+  },
+  alertDescription: {
+    color: '#94a3b8',
+    marginBottom: 12,
+  },
+  alertFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  footerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#94a3b8',
+    marginLeft: 4,
+  },
+  investigateButton: {
+    backgroundColor: '#334155',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  investigateButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  emptyIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: '#334155',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#94a3b8',
+  },
+  emptySubtext: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 4,
+  },
+});

@@ -1,66 +1,79 @@
-"use client";
 
-import * as React from "react";
-import * as AccordionPrimitive from "@radix-ui/react-accordion@1.2.3";
-import { ChevronDownIcon } from "lucide-react@0.487.0";
+import React, { useState, createContext, useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, LayoutAnimation, Platform, UIManager, ViewProps, TouchableOpacityProps } from 'react-native';
+import { ChevronDown } from 'lucide-react-native';
 
-import { cn } from "./utils";
-
-function Accordion({
-  ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Root>) {
-  return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
 }
 
-function AccordionItem({
-  className,
-  ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Item>) {
-  return (
-    <AccordionPrimitive.Item
-      data-slot="accordion-item"
-      className={cn("border-b last:border-b-0", className)}
-      {...props}
-    />
-  );
-}
+// Context to manage the state of the accordion
+const AccordionContext = createContext<{ activeItem: string | null; setActiveItem: (value: string | null) => void }>({ activeItem: null, setActiveItem: () => {} });
 
-function AccordionTrigger({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
+const Accordion: React.FC<ViewProps & {type: 'single', collapsible: boolean}> = ({ children, style, ...props }) => {
+  const [activeItem, setActiveItem] = useState<string | null>(null);
+
   return (
-    <AccordionPrimitive.Header className="flex">
-      <AccordionPrimitive.Trigger
-        data-slot="accordion-trigger"
-        className={cn(
-          "focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
-          className,
-        )}
-        {...props}
-      >
+    <AccordionContext.Provider value={{ activeItem, setActiveItem }}>
+      <View style={[styles.accordion, style]} {...props}>
         {children}
-        <ChevronDownIcon className="text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200" />
-      </AccordionPrimitive.Trigger>
-    </AccordionPrimitive.Header>
+      </View>
+    </AccordionContext.Provider>
   );
-}
+};
 
-function AccordionContent({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Content>) {
+const AccordionItem: React.FC<ViewProps & { value: string }> = ({ children, value, style }) => {
+  return <View style={[styles.item, style]}>{React.Children.map(children, child => React.isValidElement(child) ? React.cloneElement(child, { itemValue: value } as any) : child)}</View>;
+};
+
+const AccordionTrigger: React.FC<TouchableOpacityProps & { itemValue?: string }> = ({ children, itemValue, ...props }) => {
+  const { activeItem, setActiveItem } = useContext(AccordionContext);
+  const isOpen = activeItem === itemValue;
+
+  const handlePress = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setActiveItem(isOpen ? null : itemValue || null);
+  };
+
   return (
-    <AccordionPrimitive.Content
-      data-slot="accordion-content"
-      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm"
-      {...props}
-    >
-      <div className={cn("pt-0 pb-4", className)}>{children}</div>
-    </AccordionPrimitive.Content>
+    <TouchableOpacity style={styles.trigger} onPress={handlePress} {...props}>
+      <View style={{flex: 1}}>{children}</View>
+      <ChevronDown size={16} color="#94a3b8" style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }} />
+    </TouchableOpacity>
   );
-}
+};
+
+const AccordionContent: React.FC<ViewProps & { itemValue?: string }> = ({ children, itemValue, style }) => {
+  const { activeItem } = useContext(AccordionContext);
+
+  if (activeItem !== itemValue) {
+    return null;
+  }
+
+  return <View style={[styles.content, style]}>{children}</View>;
+};
+
+const styles = StyleSheet.create({
+  accordion: {
+    borderTopWidth: 1,
+    borderColor: '#334155',
+  },
+  item: {
+    borderBottomWidth: 1,
+    borderColor: '#334155',
+  },
+  trigger: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+  },
+  content: {
+    padding: 16,
+    paddingTop: 0,
+  },
+});
 
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };

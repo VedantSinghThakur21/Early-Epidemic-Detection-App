@@ -1,92 +1,74 @@
-import * as React from "react";
 
-import { cn } from "./utils";
+import React from 'react';
+import { View, Text, StyleSheet, ViewProps, TextProps } from 'react-native';
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card"
-      className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+const Card = React.forwardRef<View, ViewProps>(({ style, ...props }, ref) => (
+  <View ref={ref} style={[styles.card, style]} {...props} />
+));
+Card.displayName = 'Card';
 
-function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-header"
-      className={cn(
-        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+const CardHeader = React.forwardRef<View, ViewProps>(({ style, ...props }, ref) => (
+  <View ref={ref} style={[styles.cardHeader, style]} {...props} />
+));
+CardHeader.displayName = 'CardHeader';
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <h4
-      data-slot="card-title"
-      className={cn("leading-none", className)}
-      {...props}
-    />
-  );
-}
+const CardTitle = React.forwardRef<Text, TextProps>(({ style, ...props }, ref) => (
+  <Text ref={ref} style={[styles.cardTitle, style]} {...props} />
+));
+CardTitle.displayName = 'CardTitle';
 
-function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <p
-      data-slot="card-description"
-      className={cn("text-muted-foreground", className)}
-      {...props}
-    />
-  );
-}
+const CardDescription = React.forwardRef<Text, TextProps>(({ style, ...props }, ref) => (
+  <Text ref={ref} style={[styles.cardDescription, style]} {...props} />
+));
+CardDescription.displayName = 'CardDescription';
 
-function CardAction({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-action"
-      className={cn(
-        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+const CardContent = React.forwardRef<View, ViewProps>(({ style, ...props }, ref) => (
+  <View ref={ref} style={[styles.cardContent, style]} {...props} />
+));
+CardContent.displayName = 'CardContent';
 
-function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-content"
-      className={cn("px-6 [&:last-child]:pb-6", className)}
-      {...props}
-    />
-  );
-}
+const CardFooter = React.forwardRef<View, ViewProps>(({ style, ...props }, ref) => (
+  <View ref={ref} style={[styles.cardFooter, style]} {...props} />
+));
+CardFooter.displayName = 'CardFooter';
 
-function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-footer"
-      className={cn("flex items-center px-6 pb-6 [.border-t]:pt-6", className)}
-      {...props}
-    />
-  );
-}
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    padding: 24,
+    paddingBottom: 0,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: '#94a3b8',
+  },
+  cardContent: {
+    padding: 24,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 24,
+    paddingTop: 0,
+  },
+});
 
 export {
   Card,
   CardHeader,
   CardFooter,
   CardTitle,
-  CardAction,
   CardDescription,
   CardContent,
 };

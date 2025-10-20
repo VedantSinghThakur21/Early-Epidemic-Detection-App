@@ -1,4 +1,8 @@
+
 import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+// Now using React Native versions of these components
 import { Card, CardContent } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { Badge } from "./components/ui/badge";
@@ -12,7 +16,7 @@ import {
   Globe,
   Shield,
   Brain
-} from "lucide-react";
+} from "lucide-react-native";
 
 // Import components
 import MapView from "./components/MapView";
@@ -27,6 +31,7 @@ import SettingsScreen from "./components/SettingsScreen";
 import PrivacySecurityScreen from "./components/PrivacySecurityScreen";
 import HelpSupportScreen from "./components/HelpSupportScreen";
 import QuickStartGuide from "./components/QuickStartGuide";
+
 
 // Mock data - Global Multi-Country Dataset
 const MOCK_OUTBREAKS = [
@@ -251,264 +256,373 @@ export default function App() {
   // Show login screen if not authenticated
   if (!isAuthenticated || currentScreen === "login") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="w-[393px] h-[852px] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-[32px] shadow-2xl border border-slate-700/50 backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-          <div className="h-full relative z-10">
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.loginContainer}>
             <LoginScreen onLogin={handleLogin} />
-          </div>
-        </div>
-      </div>
+        </View>
+      </SafeAreaView>
     );
   }
 
   // Show profile sub-screens
   if (currentScreen === "notifications") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="w-[393px] h-[852px] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-[32px] shadow-2xl border border-slate-700/50 backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-          <div className="h-full flex flex-col relative z-10">
-            <div className="flex-1 overflow-hidden">
-              <NotificationsScreen 
-                onBack={handleBackToProfile}
-                onViewAlert={(alertId) => {
-                  const alert = MOCK_ALERTS.find(a => a.id === alertId);
-                  if (alert) {
-                    setSelectedAlert(alert);
-                    setCurrentScreen("alertDetail");
-                    setActiveTab("alerts");
-                  }
-                }}
-              />
-            </div>
-            <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-          </div>
-        </div>
-      </div>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.mainContainer}>
+          <View style={{flex: 1}}>
+            <NotificationsScreen 
+              onBack={handleBackToProfile}
+              onViewAlert={(alertId) => {
+                const alert = MOCK_ALERTS.find(a => a.id === alertId);
+                if (alert) {
+                  setSelectedAlert(alert);
+                  setCurrentScreen("alertDetail");
+                  setActiveTab("alerts");
+                }
+              }}
+            />
+          </View>
+          <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (currentScreen === "settings") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="w-[393px] h-[852px] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-[32px] shadow-2xl border border-slate-700/50 backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-          <div className="h-full flex flex-col relative z-10">
-            <div className="flex-1 overflow-hidden">
-              <SettingsScreen onBack={handleBackToProfile} />
-            </div>
-            <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-          </div>
-        </div>
-      </div>
+      <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.mainContainer}>
+        <View style={{flex: 1}}>
+          <SettingsScreen onBack={handleBackToProfile} />
+        </View>
+        <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+      </View>
+    </SafeAreaView>
     );
   }
 
   if (currentScreen === "privacy") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="w-[393px] h-[852px] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-[32px] shadow-2xl border border-slate-700/50 backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-          <div className="h-full flex flex-col relative z-10">
-            <div className="flex-1 overflow-hidden">
-              <PrivacySecurityScreen onBack={handleBackToProfile} />
-            </div>
-            <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-          </div>
-        </div>
-      </div>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.mainContainer}>
+          <View style={{flex: 1}}>
+            <PrivacySecurityScreen onBack={handleBackToProfile} />
+          </View>
+          <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (currentScreen === "help") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="w-[393px] h-[852px] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-[32px] shadow-2xl border border-slate-700/50 backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-          <div className="h-full flex flex-col relative z-10">
-            <div className="flex-1 overflow-hidden">
-              <HelpSupportScreen 
-                onBack={handleBackToProfile}
-                onShowQuickStart={handleShowQuickStart}
-              />
-            </div>
-            <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-          </div>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.mainContainer}>
+          <View style={{flex: 1}}>
+            <HelpSupportScreen 
+              onBack={handleBackToProfile}
+              onShowQuickStart={handleShowQuickStart}
+            />
+          </View>
+          <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
           {showQuickStart && <QuickStartGuide onClose={() => setShowQuickStart(false)} />}
-        </div>
-      </div>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (currentScreen === "quickStart") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="w-[393px] h-[852px] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-[32px] shadow-2xl border border-slate-700/50 backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-          <div className="h-full flex flex-col relative z-10">
-            <div className="flex-1 overflow-hidden">
-              <QuickStartGuide onBack={handleBackToProfile} />
-            </div>
-            <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-          </div>
-        </div>
-      </div>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.mainContainer}>
+          <View style={{flex: 1}}>
+            <QuickStartGuide onClose={handleBackToProfile} />
+          </View>
+          <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   // Show Alert Detail Screen
   if (currentScreen === "alertDetail" && selectedAlert) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="w-[393px] h-[852px] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-[32px] shadow-2xl border border-slate-700/50 backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-          <div className="h-full flex flex-col relative z-10">
-            <div className="flex-1 overflow-hidden">
-              <AlertDetailScreen 
-                alert={selectedAlert}
-                onBack={handleBackFromDetail}
-                onViewOnMap={handleViewOnMap}
-              />
-            </div>
-            <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-          </div>
-        </div>
-      </div>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.mainContainer}>
+          <View style={{flex: 1}}>
+            <AlertDetailScreen 
+              alert={selectedAlert}
+              onBack={handleBackFromDetail}
+              onViewOnMap={handleViewOnMap}
+            />
+          </View>
+          <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   // Main Dashboard
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-[393px] h-[852px] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-[32px] shadow-2xl border border-slate-700/50 backdrop-blur-xl">
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.mainContainer}>
         
         {/* Quick Start Guide Overlay */}
         {showQuickStart && <QuickStartGuide onClose={() => setShowQuickStart(false)} />}
         
-        {/* Dynamic Light Effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-        
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-blue-900/90 via-cyan-900/90 to-slate-900/90 text-white p-4 pt-12 backdrop-blur-xl border-b border-white/10">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-4 left-8 w-32 h-32 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-4 right-8 w-24 h-24 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full blur-2xl animate-pulse delay-1000"></div>
-          </div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25 backdrop-blur-sm border border-white/20">
-                  <Brain className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="font-semibold text-lg bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Sentinel AI</h1>
-                  <p className="text-xs text-blue-200/80 font-medium">Global Epidemic Monitoring</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-white hover:bg-white/15 border border-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25"
-                  onClick={handleRefresh}
+        <View style={styles.header}>
+          <View style={{zIndex: 10}}>
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16}}>
+              <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
+                <View style={styles.brainIconContainer}>
+                  <Brain color="white" size={20} />
+                </View>
+                <View>
+                  <Text style={styles.headerTitle}>Sentinel AI</Text>
+                  <Text style={styles.headerSubtitle}>Global Epidemic Monitoring</Text>
+                </View>
+              </View>
+              <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
+                <TouchableOpacity 
+                  style={styles.refreshButton}
+                  onPress={handleRefresh}
                   disabled={isRefreshing}
                 >
-                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
-                <button 
-                  onClick={() => {
+                  {isRefreshing ? <ActivityIndicator size="small" color="#ffffff" /> : <RefreshCw size={16} color="white" />}
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => {
                     setCurrentScreen("notifications");
                     setActiveTab("profile");
                   }}
-                  className="relative"
+                  style={styles.notificationButton}
                 >
-                  <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all">
-                    <Bell className="h-4 w-4" />
-                    {activeAlerts > 0 && (
-                      <div className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-lg animate-pulse">
-                        {activeAlerts}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              </div>
-            </div>
+                  <Bell size={16} color="white" />
+                  {activeAlerts > 0 && (
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.notificationBadgeText}>{activeAlerts}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
 
             {/* Enhanced Stats - Global Coverage */}
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              <Card className="bg-white/5 border-white/20 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20">
-                <CardContent className="p-2 text-center">
-                  <div className="text-white text-lg font-bold bg-gradient-to-br from-white to-blue-200 bg-clip-text text-transparent">{totalCases.toLocaleString()}</div>
-                  <div className="text-blue-200/70 text-[10px] font-medium leading-tight">Cases</div>
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16}}>
+              <Card style={styles.statCard}>
+                <CardContent style={styles.statCardContent}>
+                  <Text style={styles.statValue}>{totalCases.toLocaleString()}</Text>
+                  <Text style={styles.statLabel}>Cases</Text>
                 </CardContent>
               </Card>
-              <Card className="bg-white/5 border-white/20 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20">
-                <CardContent className="p-2 text-center">
-                  <div className="text-cyan-300 text-lg font-bold">{countriesMonitored}</div>
-                  <div className="text-blue-200/70 text-[10px] font-medium leading-tight">Countries</div>
+              <Card style={styles.statCard}>
+                <CardContent style={styles.statCardContent}>
+                  <Text style={styles.statValueCyan}>{countriesMonitored}</Text>
+                  <Text style={styles.statLabel}>Countries</Text>
                 </CardContent>
               </Card>
-              <Card className="bg-white/5 border-white/20 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-500/20">
-                <CardContent className="p-2 text-center">
-                  <div className="text-red-300 text-lg font-bold">{highRiskOutbreaks}</div>
-                  <div className="text-blue-200/70 text-[10px] font-medium leading-tight">Critical</div>
+              <Card style={styles.statCard}>
+                <CardContent style={styles.statCardContent}>
+                  <Text style={styles.statValueRed}>{highRiskOutbreaks}</Text>
+                  <Text style={styles.statLabel}>Critical</Text>
                 </CardContent>
               </Card>
-              <Card className="bg-white/5 border-white/20 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/20">
-                <CardContent className="p-2 text-center">
-                  <div className="text-emerald-300 text-lg font-bold">{regionsActive}</div>
-                  <div className="text-blue-200/70 text-[10px] font-medium leading-tight">Regions</div>
+              <Card style={styles.statCard}>
+                <CardContent style={styles.statCardContent}>
+                  <Text style={styles.statValueGreen}>{regionsActive}</Text>
+                  <Text style={styles.statLabel}>Regions</Text>
                 </CardContent>
               </Card>
-            </div>
+            </View>
             
-            <div className="text-xs text-blue-200/70 text-center flex items-center justify-center gap-2 bg-white/5 rounded-full py-2 px-3 backdrop-blur-sm border border-white/10">
-              <div className="w-2 h-2 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50"></div>
-              <span className="font-medium">Global Network • {MOCK_OUTBREAKS.length} Outbreaks Tracked</span>
-            </div>
-          </div>
-        </div>
+            <View style={styles.networkStatus}>
+              <View style={styles.networkStatusIndicator}></View>
+              <Text style={styles.networkStatusText}>Global Network • {MOCK_OUTBREAKS.length} Outbreaks Tracked</Text>
+            </View>
+          </View>
+        </View>
 
         {/* Main Content Area */}
-        <div className="flex-1 relative" style={{ height: 'calc(100% - 240px - 64px)' }}>
-          <div className="h-full p-4 overflow-hidden">
+        <ScrollView 
+          style={{flex: 1}}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+          }
+        >
+          <View style={{padding: 16}}>
             {activeTab === "alerts" && (
-              <div className="h-full">
-                <AlertsList 
-                  alerts={MOCK_ALERTS} 
-                  onAlertClick={handleAlertClick}
-                />
-              </div>
+              <AlertsList 
+                alerts={MOCK_ALERTS} 
+                onAlertClick={handleAlertClick}
+              />
             )}
 
             {activeTab === "map" && (
-              <div className="h-full">
-                <MapView outbreaks={MOCK_OUTBREAKS} />
-              </div>
+              <MapView outbreaks={MOCK_OUTBREAKS} />
             )}
 
             {activeTab === "trends" && (
-              <div className="h-full">
-                <TrendChart data={MOCK_TREND_DATA} />
-              </div>
+              <TrendChart data={MOCK_TREND_DATA} />
             )}
 
             {activeTab === "profile" && (
-              <div className="h-full overflow-hidden">
-                <ProfileScreen 
-                  onNavigate={handleProfileNavigate}
-                  onLogout={handleLogout}
-                />
-              </div>
+              <ProfileScreen 
+                onNavigate={handleProfileNavigate}
+                onLogout={handleLogout}
+              />
             )}
-          </div>
-        </div>
+          </View>
+        </ScrollView>
 
         {/* Bottom Navigation */}
         <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-      </div>
-    </div>
+      </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
+  loginContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#0f172a',
+  },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+  },
+  header: {
+    backgroundColor: '#1a202c',
+    padding: 16,
+    paddingTop: 48,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+  },
+  brainIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'white',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  refreshButton: {
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  notificationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  statCardContent: {
+    padding: 8,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  statValueCyan: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#67e8f9',
+  },
+  statValueRed: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f87171',
+  },
+  statValueGreen: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4ade80',
+  },
+  statLabel: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '500',
+    lineHeight: 12,
+  },
+  networkStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 9999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  networkStatusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+  },
+
+  networkStatusText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '500',
+  }
+});

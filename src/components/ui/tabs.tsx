@@ -1,66 +1,77 @@
-"use client";
 
-import * as React from "react";
-import * as TabsPrimitive from "@radix-ui/react-tabs@1.1.3";
+import React, { useState, createContext, useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ViewProps, TouchableOpacityProps } from 'react-native';
 
-import { cn } from "./utils";
+// Context to manage the active tab
+const TabsContext = createContext<{ activeTab: string; setActiveTab: (value: string) => void; }>({ activeTab: '', setActiveTab: () => {} });
 
-function Tabs({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+// The main Tabs component that holds the state
+const Tabs: React.FC<ViewProps & { defaultValue: string }> = ({ defaultValue, children, style }) => {
+  const [activeTab, setActiveTab] = useState(defaultValue);
+
   return (
-    <TabsPrimitive.Root
-      data-slot="tabs"
-      className={cn("flex flex-col gap-2", className)}
-      {...props}
-    />
+    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      <View style={style}>{children}</View>
+    </TabsContext.Provider>
   );
-}
+};
 
-function TabsList({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.List>) {
-  return (
-    <TabsPrimitive.List
-      data-slot="tabs-list"
-      className={cn(
-        "bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-xl p-[3px] flex",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+// A container for the tab triggers
+const TabsList: React.FC<ViewProps> = ({ children, style }) => {
+  return <View style={[styles.tabsList, style]}>{children}</View>;
+};
 
-function TabsTrigger({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
-  return (
-    <TabsPrimitive.Trigger
-      data-slot="tabs-trigger"
-      className={cn(
-        "data-[state=active]:bg-card dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+// A touchable trigger for each tab
+const TabsTrigger: React.FC<TouchableOpacityProps & { value: string }> = ({ value, children, style }) => {
+  const { activeTab, setActiveTab } = useContext(TabsContext);
+  const isActive = activeTab === value;
 
-function TabsContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
   return (
-    <TabsPrimitive.Content
-      data-slot="tabs-content"
-      className={cn("flex-1 outline-none", className)}
-      {...props}
-    />
+    <TouchableOpacity
+      style={[styles.trigger, isActive && styles.activeTrigger, style]}
+      onPress={() => setActiveTab(value)}
+    >
+      {typeof children === 'string' ? <Text style={[styles.triggerText, isActive && styles.activeTriggerText]}>{children}</Text> : children}
+    </TouchableOpacity>
   );
-}
+};
+
+// A container for the content of each tab
+const TabsContent: React.FC<ViewProps & { value: string }> = ({ value, children, style }) => {
+  const { activeTab } = useContext(TabsContext);
+
+  if (activeTab !== value) {
+    return null;
+  }
+
+  return <View style={style}>{children}</View>;
+};
+
+const styles = StyleSheet.create({
+  tabsList: {
+    flexDirection: 'row',
+    backgroundColor: '#1e293b',
+    borderRadius: 8,
+    padding: 4,
+  },
+  trigger: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeTrigger: {
+    backgroundColor: '#3b82f6',
+  },
+  triggerText: {
+    color: '#94a3b8',
+  },
+  activeTriggerText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+});
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };

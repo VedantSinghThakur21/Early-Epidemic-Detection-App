@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "ShoppingApp",
+    "slug": "shopping-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shoppingapp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.shoppingapp"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

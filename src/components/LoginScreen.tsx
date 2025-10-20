@@ -1,9 +1,7 @@
+
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Brain, Mail, Lock, AlertCircle, Monitor, Info } from "lucide-react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { Brain, Mail, Lock, AlertCircle, Monitor } from "lucide-react-native";
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -14,9 +12,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleLogin = () => {
     // Simple validation
     if (!email || !password) {
       setError("Please enter both email and password");
@@ -29,112 +25,281 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 justify-center items-center p-6 overflow-y-auto scrollbar-hide">
-      <div className="w-full max-w-sm space-y-4 py-6">
-        {/* Logo and Title */}
-        <div className="text-center space-y-3">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/25 mx-auto">
-            <Brain className="h-8 w-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-              Sentinel AI
-            </h1>
-            <p className="text-sm text-blue-200/70 mt-1">Advanced Epidemic Intelligence System</p>
-          </div>
-        </div>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.innerContainer}>
+          {/* Logo and Title */}
+          <View style={styles.titleContainer}>
+            <View style={styles.logoBackground}>
+              <Brain size={32} color="white" />
+            </View>
+            <View>
+              <Text style={styles.title}>Sentinel AI</Text>
+              <Text style={styles.subtitle}>Advanced Epidemic Intelligence System</Text>
+            </View>
+          </View>
 
-        {/* Important Info Banner */}
-        <Card className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border-blue-500/30 backdrop-blur-xl">
-          <CardContent className="p-3">
-            <div className="flex items-start gap-2.5">
-              <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 border border-blue-500/30">
-                <Monitor className="h-4 w-4 text-blue-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-xs font-semibold text-blue-200 mb-1">React Web Application</h3>
-                <p className="text-[11px] text-blue-300/80 leading-relaxed">
-                  Mobile-optimized web app (393×852px) for browser viewing. See <span className="text-blue-400 font-medium">Profile → Help & Support</span> for setup tutorials and video guides.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Important Info Banner */}
+          <View style={styles.infoBanner}>
+            <View style={styles.infoBannerContent}>
+              <View style={styles.infoIconContainer}>
+                <Monitor size={16} color="#60a5fa" />
+              </View>
+              <View style={{flex: 1}}>
+                <Text style={styles.infoBannerTitle}>React Web Application</Text>
+                <Text style={styles.infoBannerText}>
+                  Mobile-optimized web app (393×852px) for browser viewing. See <Text style={{fontWeight: '500', color: '#60a5fa'}}>Profile → Help & Support</Text> for setup tutorials and video guides.
+                </Text>
+              </View>
+            </View>
+          </View>
 
-        {/* Login Card */}
-        <Card className="bg-gradient-to-br from-slate-800/50 to-slate-800/30 border-slate-700/50 backdrop-blur-xl shadow-2xl">
-          <CardHeader>
-            <CardTitle className="text-lg text-center text-slate-200">Sign In to Dashboard</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-300 text-sm">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="email"
-                    type="email"
+          {/* Login Card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Sign In to Dashboard</Text>
+            
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email Address</Text>
+                <View style={styles.inputContainer}>
+                  <Mail style={styles.inputIcon} size={16} color="#94a3b8" />
+                  <TextInput
                     placeholder="health.official@gov.in"
+                    placeholderTextColor="#64748b"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-slate-900/50 border-slate-600/50 text-slate-200 placeholder:text-slate-500"
+                    onChangeText={setEmail}
+                    style={styles.input}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
                   />
-                </div>
-              </div>
+                </View>
+              </View>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-300 text-sm">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="password"
-                    type="password"
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.inputContainer}>
+                  <Lock style={styles.inputIcon} size={16} color="#94a3b8" />
+                  <TextInput
                     placeholder="Enter your password"
+                    placeholderTextColor="#64748b"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-slate-900/50 border-slate-600/50 text-slate-200 placeholder:text-slate-500"
+                    onChangeText={setPassword}
+                    style={styles.input}
+                    secureTextEntry
                   />
-                </div>
-              </div>
+                </View>
+              </View>
 
               {error && (
-                <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{error}</span>
-                </div>
+                <View style={styles.errorContainer}>
+                  <AlertCircle size={16} color="#f87171" />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
               )}
 
-              <Button 
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-105"
+              <TouchableOpacity 
+                onPress={handleLogin}
+                style={styles.button}
               >
-                Sign In
-              </Button>
-            </form>
+                <Text style={styles.buttonText}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
 
-            <div className="mt-4 text-center">
-              <button className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                Forgot password?
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+            <View style={{marginTop: 16, alignItems: 'center'}}>
+              <TouchableOpacity>
+                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-        {/* Demo Credentials Info */}
-        <Card className="bg-slate-800/30 border-slate-700/30 backdrop-blur-sm">
-          <CardContent className="p-3 text-center text-xs text-slate-400">
-            <p className="mb-1 text-slate-300 font-medium">Demo Access</p>
-            <p>Enter any email and password to access the dashboard</p>
-          </CardContent>
-        </Card>
+          {/* Demo Credentials Info */}
+          <View style={styles.demoInfoCard}>
+            <Text style={styles.demoInfoTitle}>Demo Access</Text>
+            <Text style={styles.demoInfoText}>Enter any email and password to access the dashboard</Text>
+          </View>
 
-        {/* Footer */}
-        <div className="text-center text-xs text-slate-500 space-y-1">
-          <p>Secured by Government Health Network</p>
-          <p className="text-slate-600">Project Phase 1 Evaluation Build</p>
-        </div>
-      </div>
-    </div>
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Secured by Government Health Network</Text>
+            <Text style={[styles.footerText, {color: '#475569'}]}>Project Phase 1 Evaluation Build</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  innerContainer: {
+    width: '100%',
+    maxWidth: 384,
+    gap: 16,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  logoBackground: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: '#2563eb', // Simplified gradient
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#eff6ff', // Simplified gradient
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#94a3b8',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  infoBanner: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)', // Simplified gradient & opacity
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+  infoBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  infoIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  infoBannerTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#dbeafe',
+    marginBottom: 4,
+  },
+  infoBannerText: {
+    fontSize: 11,
+    color: '#bfdbfe',
+    lineHeight: 16,
+  },
+  card: {
+    backgroundColor: 'rgba(30, 41, 59, 0.4)',
+    borderColor: '#475569',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#e2e8f0',
+    marginBottom: 16,
+  },
+  form: {
+    gap: 16,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    color: '#cbd5e1',
+    fontSize: 14,
+  },
+  inputContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: 12,
+    zIndex: 1,
+  },
+  input: {
+    height: 40,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    borderColor: 'rgba(71, 85, 105, 0.5)',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 40,
+    color: '#e2e8f0',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#f87171',
+  },
+  button: {
+    backgroundColor: '#2563eb', // Simplified gradient
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  forgotPasswordText: {
+    fontSize: 12,
+    color: '#60a5fa',
+  },
+  demoInfoCard: {
+    backgroundColor: 'rgba(30, 41, 59, 0.3)',
+    borderColor: 'rgba(71, 85, 105, 0.3)',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  demoInfoTitle: {
+    color: '#e2e8f0',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  demoInfoText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    textAlign: 'center',
+  },
+  footer: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+});

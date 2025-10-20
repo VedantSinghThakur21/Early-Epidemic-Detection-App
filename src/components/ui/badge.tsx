@@ -1,46 +1,82 @@
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot@1.1.2";
-import { cva, type VariantProps } from "class-variance-authority@0.7.1";
 
-import { cn } from "./utils";
+import React from 'react';
+import { View, Text, StyleSheet, ViewProps, TextProps } from 'react-native';
 
-const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
-  {
-    variants: {
-      variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
-        destructive:
-          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
-
-function Badge({
-  className,
-  variant,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"span"> &
-  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "span";
-
-  return (
-    <Comp
-      data-slot="badge"
-      className={cn(badgeVariants({ variant }), className)}
-      {...props}
-    />
-  );
+interface BadgeProps extends ViewProps {
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline';
+  style?: ViewProps['style'];
+  textStyle?: TextProps['style'];
+  children?: React.ReactNode;
 }
 
-export { Badge, badgeVariants };
+const Badge = React.forwardRef<View, BadgeProps>(
+  ({ variant = 'default', style, textStyle, children, ...props }, ref) => {
+    const containerStyle = [
+      styles.baseContainer,
+      styles[`variant_${variant}`],
+      style,
+    ];
+
+    const content =
+      typeof children === 'string' ? (
+        <Text style={[styles.baseText, styles[`text_${variant}`], textStyle]}>
+          {children}
+        </Text>
+      ) : (
+        children
+      );
+
+    return (
+      <View ref={ref} style={containerStyle} {...props}>
+        {content}
+      </View>
+    );
+  }
+);
+Badge.displayName = 'Badge';
+
+const styles = StyleSheet.create({
+  baseContainer: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+  },
+  baseText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  variant_default: {
+    backgroundColor: '#2563eb',
+    borderColor: 'transparent',
+  },
+  text_default: {
+    color: 'white',
+  },
+  variant_secondary: {
+    backgroundColor: '#334155',
+    borderColor: 'transparent',
+  },
+  text_secondary: {
+    color: 'white',
+  },
+  variant_destructive: {
+    backgroundColor: '#ef4444',
+    borderColor: 'transparent',
+  },
+  text_destructive: {
+    color: 'white',
+  },
+  variant_outline: {
+    borderColor: '#334155',
+    backgroundColor: 'transparent',
+  },
+  text_outline: {
+    color: '#cbd5e1',
+  },
+});
+
+export { Badge };

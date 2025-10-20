@@ -1,53 +1,70 @@
-"use client";
 
-import * as React from "react";
-import * as AvatarPrimitive from "@radix-ui/react-avatar@1.1.3";
+import React, { useState, useContext } from 'react';
+import { View, Text, Image, StyleSheet, ViewProps, TextProps, ImageProps } from 'react-native';
 
-import { cn } from "./utils";
+const AvatarContext = React.createContext<{ imageStatus: string; setImageStatus: (status: string) => void; } | null>(null);
 
-function Avatar({
-  className,
-  ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+const Avatar: React.FC<ViewProps> = ({ children, style }) => {
+  const [imageStatus, setImageStatus] = useState('loading');
+
   return (
-    <AvatarPrimitive.Root
-      data-slot="avatar"
-      className={cn(
-        "relative flex size-10 shrink-0 overflow-hidden rounded-full",
-        className,
-      )}
+    <AvatarContext.Provider value={{ imageStatus, setImageStatus }}>
+      <View style={[styles.avatar, style]}>{children}</View>
+    </AvatarContext.Provider>
+  );
+};
+
+const AvatarImage: React.FC<ImageProps> = ({ ...props }) => {
+  const context = useContext(AvatarContext);
+
+  if (!context) {
+    throw new Error('AvatarImage must be used within an Avatar component');
+  }
+
+  return (
+    <Image
       {...props}
+      style={[styles.image, props.style]}
+      onLoad={() => context.setImageStatus('loaded')}
+      onError={() => context.setImageStatus('error')}
     />
   );
-}
+};
 
-function AvatarImage({
-  className,
-  ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
-  return (
-    <AvatarPrimitive.Image
-      data-slot="avatar-image"
-      className={cn("aspect-square size-full", className)}
-      {...props}
-    />
-  );
-}
+const AvatarFallback: React.FC<ViewProps> = ({ children, style }) => {
+  const context = useContext(AvatarContext);
 
-function AvatarFallback({
-  className,
-  ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
-  return (
-    <AvatarPrimitive.Fallback
-      data-slot="avatar-fallback"
-      className={cn(
-        "bg-muted flex size-full items-center justify-center rounded-full",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+  if (!context) {
+    throw new Error('AvatarFallback must be used within an Avatar component');
+  }
+
+  if (context.imageStatus === 'loaded') {
+    return null;
+  }
+
+  return <View style={[styles.fallback, style]}>{children}</View>;
+};
+
+const styles = StyleSheet.create({
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  fallback: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#334155',
+  },
+});
 
 export { Avatar, AvatarImage, AvatarFallback };
