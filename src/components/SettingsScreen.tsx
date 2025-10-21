@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { ArrowLeft, Download, Trash2, RefreshCw } from 'lucide-react-native';
+import { ConnectionStatus } from './ConnectionStatus';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -58,6 +59,19 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
       </View>
 
       <ScrollView style={styles.contentContainer}>
+        <Card style={styles.card}>
+          <CardHeader>
+            <CardTitle>API Connection</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConnectionStatus />
+            <Text style={styles.helpText}>
+              Test the connection to EpiWatch API. If the test fails, check your internet connection.
+              The API may take 30-60 seconds to wake up from sleep.
+            </Text>
+          </CardContent>
+        </Card>
+
         <Card style={styles.card}>
           <CardHeader>
             <CardTitle>Notifications</CardTitle>
@@ -215,5 +229,11 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '500',
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 8,
+    lineHeight: 16,
   },
 });

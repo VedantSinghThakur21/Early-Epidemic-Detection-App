@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Now using React Native versions of these components
@@ -31,6 +31,10 @@ import SettingsScreen from "./components/SettingsScreen";
 import PrivacySecurityScreen from "./components/PrivacySecurityScreen";
 import HelpSupportScreen from "./components/HelpSupportScreen";
 import QuickStartGuide from "./components/QuickStartGuide";
+
+// Import API hooks
+import { useDashboardStats, useMapData, useAlerts } from "./hooks/useEpiWatch";
+import epiwatchService from "./services/epiwatchService";
 
 
 // Mock data - Global Multi-Country Dataset
@@ -174,19 +178,38 @@ type ScreenType =
   | "quickStart";
 
 export default function App() {
+  // Fetch real-time data from API
+  const { data: dashboardStats, loading: statsLoading, refetch: refetchStats } = useDashboardStats();
+  const { data: mapOutbreaks, loading: mapLoading, refetch: refetchMap } = useMapData();
+  const { data: apiAlerts, loading: alertsLoading, refetch: refetchAlerts } = useAlerts({ limit: 20 });
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("login");
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<NavTab>("alerts");
-  const [selectedAlert, setSelectedAlert] = useState<typeof MOCK_ALERTS[0] | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<any>(null);
   const [showQuickStart, setShowQuickStart] = useState(false);
   
-  const totalCases = MOCK_OUTBREAKS.reduce((sum, outbreak) => sum + outbreak.cases, 0);
-  const highRiskOutbreaks = MOCK_OUTBREAKS.filter(outbreak => outbreak.severity === "high").length;
-  const activeAlerts = MOCK_ALERTS.filter(alert => alert.severity === "high" || alert.severity === "moderate").length;
-  const countriesMonitored = new Set(MOCK_OUTBREAKS.map(o => o.location.country)).size;
-  const regionsActive = new Set(MOCK_OUTBREAKS.map(o => o.location.region)).size;
+  // Wake up API on mount
+  useEffect(() => {
+    const wakeUpApi = async () => {
+      console.log('[App] Waking up EpiWatch API...');
+      await epiwatchService.wakeUpApi();
+      console.log('[App] API is ready!');
+    };
+    
+    if (isAuthenticated) {
+      wakeUpApi();
+    }
+  }, [isAuthenticated]);
+  
+  // Calculate stats from real API data
+  const totalCases = dashboardStats?.total_outbreaks || 0;
+  const highRiskOutbreaks = mapOutbreaks?.filter(outbreak => outbreak.severity === "high" || outbreak.severity === "critical").length || 0;
+  const activeAlerts = apiAlerts?.filter(alert => alert.severity === "high" || alert.severity === "critical" || alert.severity === "medium").length || 0;
+  const countriesMonitored = dashboardStats?.affected_countries || 0;
+  const activeDiseases = dashboardStats?.active_diseases || 0;
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -206,11 +229,19 @@ export default function App() {
   const handleRefresh = () => {
     setIsRefreshing(true);
     setLastUpdated(new Date());
-    setTimeout(() => setIsRefreshing(false), 1000);
+    
+    // Refetch all data
+    Promise.all([
+      refetchStats(),
+      refetchMap(),
+      refetchAlerts()
+    ]).finally(() => {
+      setIsRefreshing(false);
+    });
   };
 
   const handleAlertClick = (alertId: number) => {
-    const alert = MOCK_ALERTS.find(a => a.id === alertId);
+    const alert = apiAlerts?.find(a => a.id === alertId);
     if (alert) {
       setSelectedAlert(alert);
       setCurrentScreen("alertDetail");
@@ -275,7 +306,7 @@ export default function App() {
             <NotificationsScreen 
               onBack={handleBackToProfile}
               onViewAlert={(alertId) => {
-                const alert = MOCK_ALERTS.find(a => a.id === alertId);
+                const alert = apiAlerts?.find(a => a.id === alertId);
                 if (alert) {
                   setSelectedAlert(alert);
                   setCurrentScreen("alertDetail");
@@ -421,7 +452,7 @@ export default function App() {
               <Card style={styles.statCard}>
                 <CardContent style={styles.statCardContent}>
                   <Text style={styles.statValue}>{totalCases.toLocaleString()}</Text>
-                  <Text style={styles.statLabel}>Cases</Text>
+                  <Text style={styles.statLabel}>Outbreaks</Text>
                 </CardContent>
               </Card>
               <Card style={styles.statCard}>
@@ -438,15 +469,18 @@ export default function App() {
               </Card>
               <Card style={styles.statCard}>
                 <CardContent style={styles.statCardContent}>
-                  <Text style={styles.statValueGreen}>{regionsActive}</Text>
-                  <Text style={styles.statLabel}>Regions</Text>
+                  <Text style={styles.statValueGreen}>{activeDiseases}</Text>
+                  <Text style={styles.statLabel}>Diseases</Text>
                 </CardContent>
               </Card>
             </View>
             
             <View style={styles.networkStatus}>
               <View style={styles.networkStatusIndicator}></View>
-              <Text style={styles.networkStatusText}>Global Network • {MOCK_OUTBREAKS.length} Outbreaks Tracked</Text>
+              <Text style={styles.networkStatusText}>
+                Global Network • {mapOutbreaks?.length || 0} Outbreaks Tracked
+                {statsLoading && ' • Loading...'}
+              </Text>
             </View>
           </View>
         </View>
@@ -461,17 +495,16 @@ export default function App() {
           <View style={{padding: 16}}>
             {activeTab === "alerts" && (
               <AlertsList 
-                alerts={MOCK_ALERTS} 
                 onAlertClick={handleAlertClick}
               />
             )}
 
             {activeTab === "map" && (
-              <MapView outbreaks={MOCK_OUTBREAKS} />
+              <MapView />
             )}
 
             {activeTab === "trends" && (
-              <TrendChart data={MOCK_TREND_DATA} />
+              <TrendChart />
             )}
 
             {activeTab === "profile" && (
