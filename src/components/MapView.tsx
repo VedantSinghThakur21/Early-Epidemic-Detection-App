@@ -1,9 +1,8 @@
-
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-// import MapView, { Marker, Callout } from 'react-native-maps'; // Temporarily disabled for Expo Go
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import Svg, { Circle, G } from 'react-native-svg';
 import { Badge } from './ui/badge';
-import { MapPin, TrendingUp, Calendar, Globe2, Map } from 'lucide-react-native';
+import { MapPin } from 'lucide-react-native';
 
 interface Outbreak {
   id: number;
@@ -26,6 +25,7 @@ interface MapViewProps {
 
 export default function MapView({ outbreaks }: MapViewProps) {
   const [selectedOutbreak, setSelectedOutbreak] = useState<Outbreak | null>(null);
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -44,20 +44,123 @@ export default function MapView({ outbreaks }: MapViewProps) {
     setSelectedOutbreak(outbreak);
   };
 
+  // Convert lat/lng to SVG coordinates (simplified projection)
+  const projectCoordinates = (lat: number, lng: number) => {
+    const x = ((lng + 180) / 360) * 500;
+    const y = ((90 - lat) / 180) * 250;
+    return { x, y };
+  };
+
   return (
     <View style={styles.container}>
-      {/* Temporary placeholder - react-native-maps not supported in Expo Go */}
-      <View style={styles.mapPlaceholder}>
-        <Map size={64} color="#60a5fa" />
-        <Text style={styles.placeholderText}>Map View</Text>
-        <Text style={styles.placeholderSubtext}>
-          Interactive map requires native build
-        </Text>
-        <Text style={styles.placeholderSubtext}>
-          {outbreaks.length} outbreak locations tracked
-        </Text>
+      {/* Interactive World Map */}
+      <View style={[styles.mapContainer, isMapExpanded && styles.mapContainerExpanded]}>
+        {/* Live indicator */}
+        <View style={styles.liveIndicator}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveText}>Live</Text>
+        </View>
+        
+        {/* World Map - Using OpenStreetMap free tile service */}
+        <View style={{ flex: 1, position: 'relative', backgroundColor: '#0a1929' }}>
+          {/* Real world map from OpenStreetMap (free tile service) */}
+          <Image
+            source={{ uri: 'https://tile.openstreetmap.org/0/0/0.png' }}
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              opacity: 0.5
+            }}
+            resizeMode="cover"
+          />
+          
+          {/* Dark overlay for dark mode effect */}
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 41, 66, 0.6)'
+          }} />
+          
+          {/* Interactive outbreak markers overlaid on top */}
+          <Svg 
+            width="100%" 
+            height="100%" 
+            viewBox="0 0 500 250" 
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          >
+          {outbreaks.map((outbreak) => {
+            const { x, y } = projectCoordinates(outbreak.location.lat, outbreak.location.lng);
+            const color = getSeverityColor(outbreak.severity);
+            const isSelected = selectedOutbreak?.id === outbreak.id;
+            
+            return (
+              <G key={outbreak.id}>
+                {/* Pulsing outer circle */}
+                <Circle 
+                  cx={x} 
+                  cy={y} 
+                  r={isSelected ? "18" : "14"} 
+                  fill="none" 
+                  stroke={color} 
+                  strokeWidth={isSelected ? "3" : "2.5"} 
+                  opacity={isSelected ? "0.6" : "0.3"} 
+                />
+                <Circle 
+                  cx={x} 
+                  cy={y} 
+                  r={isSelected ? "12" : "10"} 
+                  fill="none" 
+                  stroke={color} 
+                  strokeWidth="2" 
+                  opacity={isSelected ? "0.8" : "0.5"} 
+                />
+                {/* Inner dot - Make it touchable */}
+                <Circle 
+                  cx={x} 
+                  cy={y} 
+                  r={isSelected ? "7" : "5"} 
+                  fill={color} 
+                  stroke="white" 
+                  strokeWidth={isSelected ? "2.5" : "1.5"}
+                  onPress={() => handleMarkerPress(outbreak)}
+                />
+              </G>
+            );
+          })}
+          </Svg>
+        </View>
+
+        {/* Map Legend */}
+        <View style={styles.mapLegend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#ef4444' }]} />
+            <Text style={styles.legendText}>Critical</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#f97316' }]} />
+            <Text style={styles.legendText}>Major</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#eab308' }]} />
+            <Text style={styles.legendText}>Moderate</Text>
+          </View>
+        </View>
+
+        {/* Expand/Collapse button */}
+        <TouchableOpacity 
+          style={styles.expandButton}
+          onPress={() => setIsMapExpanded(!isMapExpanded)}
+        >
+          <Text style={styles.expandButtonText}>
+            {isMapExpanded ? '▼ Collapse' : '▲ Expand Map'}
+          </Text>
+        </TouchableOpacity>
       </View>
-      
+
+      {/* Outbreak List */}
       <View style={styles.listContainer}>
         <Text style={styles.listTitle}>Global Outbreak Locations</Text>
         <ScrollView>
@@ -92,30 +195,118 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  mapPlaceholder: {
-    flex: 0.6,
-    backgroundColor: '#334155',
-    alignItems: 'center',
-    justifyContent: 'center',
+  mapContainer: {
+    height: 220,
+    backgroundColor: '#1e3a5f',
     borderBottomWidth: 2,
     borderBottomColor: '#60a5fa',
+    borderRadius: 16,
+    margin: 16,
+    overflow: 'hidden',
   },
-  placeholderText: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  mapContainerExpanded: {
+    height: 500,
+    margin: 8,
+  },
+  liveIndicator: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+    zIndex: 10,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10b981',
+  },
+  liveText: {
     color: 'white',
-    marginTop: 16,
+    fontSize: 12,
+    fontWeight: '600',
   },
-  placeholderSubtext: {
-    fontSize: 14,
-    color: '#94a3b8',
-    marginTop: 8,
-    textAlign: 'center',
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+  customMarkerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markerPulse: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+    opacity: 0.5,
+  },
+  markerDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  expandButton: {
+    position: 'absolute',
+    bottom: 70,
+    left: '50%',
+    transform: [{ translateX: -60 }],
+    backgroundColor: 'rgba(59, 130, 246, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  expandButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  mapLegend: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: 'row',
+    gap: 12,
+    zIndex: 10,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    fontWeight: '600',
   },
   listContainer: {
     flex: 1,
     backgroundColor: '#1e293b',
     padding: 16,
+    marginTop: 8,
   },
   listTitle: {
     fontSize: 18,

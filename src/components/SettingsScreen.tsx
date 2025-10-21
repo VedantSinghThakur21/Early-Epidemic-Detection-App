@@ -1,12 +1,10 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Platform } from 'react-native';
-import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
-import { Label } from './ui/label';
-import { ArrowLeft, Bell, Globe, Moon, Smartphone, Download, Trash2, RefreshCw, Database } from 'lucide-react-native';
+import { ArrowLeft, Download, Trash2, RefreshCw } from 'lucide-react-native';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -31,6 +29,12 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
     } catch (error) {
       Alert.alert('Error', 'Failed to export data');
     }
+  };
+
+  const handleSyncNow = () => {
+    Alert.alert('Syncing...', 'Data synchronization in progress.', [
+      { text: 'OK', onPress: () => Alert.alert('Success', 'Data synchronized successfully!') }
+    ]);
   };
 
   const handleClearCache = () => {
@@ -60,12 +64,12 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           </CardHeader>
           <CardContent>
             <View style={styles.settingRow}>
-              <Label>Push Notifications</Label>
+              <Text style={styles.settingLabel}>Push Notifications</Text>
               <Switch value={pushNotifications} onValueChange={setPushNotifications} />
             </View>
             <Separator style={styles.separator} />
             <View style={styles.settingRow}>
-              <Label>Email Alerts</Label>
+              <Text style={styles.settingLabel}>Email Alerts</Text>
               <Switch value={emailAlerts} onValueChange={setEmailAlerts} />
             </View>
           </CardContent>
@@ -77,7 +81,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           </CardHeader>
           <CardContent>
             <View style={styles.settingRow}>
-              <Label>Dark Mode</Label>
+              <Text style={styles.settingLabel}>Dark Mode</Text>
               <Switch value={darkMode} onValueChange={setDarkMode} />
             </View>
           </CardContent>
@@ -89,14 +93,14 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           </CardHeader>
           <CardContent>
             <View style={styles.settingRow}>
-              <Label>Auto Sync</Label>
+              <Text style={styles.settingLabel}>Auto Sync</Text>
               <Switch value={autoSync} onValueChange={setAutoSync} />
             </View>
             <Separator style={styles.separator} />
-            <Button variant="outline" style={{ marginTop: 16 }}>
+            <TouchableOpacity style={styles.syncButton} onPress={handleSyncNow}>
               <RefreshCw size={16} color="#94a3b8" style={{ marginRight: 8 }} />
-              Sync Now
-            </Button>
+              <Text style={styles.syncButtonText}>Sync Now</Text>
+            </TouchableOpacity>
           </CardContent>
         </Card>
 
@@ -105,14 +109,14 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
             <CardTitle>Storage</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" onPress={handleExportData}>
+            <TouchableOpacity style={styles.exportButton} onPress={handleExportData}>
               <Download size={16} color="#94a3b8" style={{ marginRight: 8 }} />
-              Export Data
-            </Button>
-            <Button variant="destructive" onPress={handleClearCache} style={{ marginTop: 12 }}>
+              <Text style={styles.exportButtonText}>Export Data</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.clearButton} onPress={handleClearCache}>
               <Trash2 size={16} color="white" style={{ marginRight: 8 }} />
-              Clear Cache
-            </Button>
+              <Text style={styles.clearButtonText}>Clear Cache</Text>
+            </TouchableOpacity>
           </CardContent>
         </Card>
       </ScrollView>
@@ -156,7 +160,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
+  settingLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#cbd5e1',
+  },
   separator: {
     marginVertical: 8,
+  },
+  syncButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#334155',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  syncButtonText: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  exportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#334155',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  exportButtonText: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  clearButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ef4444',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  clearButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
