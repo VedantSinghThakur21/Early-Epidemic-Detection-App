@@ -60,7 +60,6 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           {/* Login Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sign In to Dashboard</Text>
-            
             <View style={styles.form}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email Address</Text>
