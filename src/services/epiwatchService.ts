@@ -43,7 +43,7 @@ class EpiWatchService {
 
   /**
    * Dashboard Statistics
-   * Endpoint: GET /statistics
+   * Endpoint: GET /stats
    * Returns comprehensive outbreak statistics
    */
   async getStatistics(): Promise<DashboardStats> {
@@ -51,7 +51,7 @@ class EpiWatchService {
       console.log('[EpiWatch] Fetching statistics...');
       // Use retry logic for critical endpoints
       const data = await retryRequest(async () => {
-        const response: AxiosResponse<DashboardStats> = await apiClient.get('/statistics');
+        const response: AxiosResponse<DashboardStats> = await apiClient.get('/stats');
         return response.data;
       }, 3, 3000); // 3 retries, 3 second delay
       console.log('[EpiWatch] Statistics loaded:', data);
@@ -112,6 +112,7 @@ class EpiWatchService {
    * Get 7-Day Trends
    * Endpoint: GET /trends
    * Returns trend analysis for specified diseases
+   * Note: This endpoint returns 500 error on the new API
    */
   async getTrends(params?: TrendsParams): Promise<TrendsResponse> {
     try {
@@ -122,7 +123,8 @@ class EpiWatchService {
       });
       return response.data;
     } catch (error) {
-      console.error('[EpiWatch] Failed to fetch trends:', error);
+      // Suppress error logging for broken endpoint
+      console.log('[EpiWatch] Trends endpoint unavailable (500 error) - using fallback data');
       throw error;
     }
   }

@@ -9,8 +9,8 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
  * - Requires longer timeout settings
  */
 
-const API_BASE_URL = 'https://epiwatch-api-qil4.onrender.com';
-const API_VERSION = 'api/v1';
+const API_BASE_URL = 'https://epiwatch-wmad-refined-2.onrender.com';
+const API_VERSION = ''; // No API version prefix for this API
 
 // Timeout configuration (in milliseconds)
 const TIMEOUTS = {
@@ -23,7 +23,7 @@ const TIMEOUTS = {
  */
 export const createAxiosInstance = (): AxiosInstance => {
   const instance = axios.create({
-    baseURL: `${API_BASE_URL}/${API_VERSION}`,
+    baseURL: API_VERSION ? `${API_BASE_URL}/${API_VERSION}` : API_BASE_URL,
     timeout: TIMEOUTS.REQUEST,
     headers: {
       'Content-Type': 'application/json',
@@ -57,34 +57,51 @@ export const createAxiosInstance = (): AxiosInstance => {
       return response;
     },
     (error: AxiosError) => {
-      // Enhanced error logging for debugging
-      console.error('[API Error Details]', {
-        message: error.message,
-        code: error.code,
-        status: error.response?.status,
-        url: error.config?.url,
-        baseURL: error.config?.baseURL,
-      });
+      // Suppress error logging for known broken endpoints
+      const isTrendsEndpoint = error.config?.url?.includes('/trends');
+      
+      if (!isTrendsEndpoint) {
+        // Enhanced error logging for debugging
+        console.error('[API Error Details]', {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+        });
+      }
 
       if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-        console.error('[API Timeout] Request took too long. API may be waking up from sleep...');
+        if (!isTrendsEndpoint) {
+          console.error('[API Timeout] Request took too long. API may be waking up from sleep...');
+        }
         error.message = 'Request timeout. The API might be waking up (takes ~30-60 seconds). Please wait and try again.';
       } else if (error.code === 'ENOTFOUND' || error.code === 'EAI_AGAIN') {
-        console.error('[DNS Error] Could not resolve hostname');
+        if (!isTrendsEndpoint) {
+          console.error('[DNS Error] Could not resolve hostname');
+        }
         error.message = 'Could not connect to server. Please check your internet connection.';
       } else if (error.code === 'ECONNREFUSED') {
-        console.error('[Connection Refused] Server refused connection');
+        if (!isTrendsEndpoint) {
+          console.error('[Connection Refused] Server refused connection');
+        }
         error.message = 'Server connection refused. The API may be temporarily unavailable.';
       } else if (error.response) {
         // Server responded with error status
-        console.error(`[API Error] ${error.response.status}:`, error.response.data);
+        if (!isTrendsEndpoint) {
+          console.error(`[API Error] ${error.response.status}:`, error.response.data);
+        }
         error.message = `Server error: ${error.response.status} ${error.response.statusText}`;
       } else if (error.request) {
         // Request made but no response
-        console.error('[API Network Error] No response received from server');
+        if (!isTrendsEndpoint) {
+          console.error('[API Network Error] No response received from server');
+        }
         error.message = 'No response from server. Please check your internet connection and try again.';
       } else {
-        console.error('[API Error]', error.message);
+        if (!isTrendsEndpoint) {
+          console.error('[API Error]', error.message);
+        }
       }
       
       return Promise.reject(error);
@@ -137,7 +154,8 @@ export const testConnection = async (): Promise<{
   const startTime = Date.now();
   
   try {
-    const response = await axios.get(`${API_BASE_URL}/${API_VERSION}/health`, {
+    const healthUrl = API_VERSION ? `${API_BASE_URL}/${API_VERSION}/health` : `${API_BASE_URL}/health`;
+    const response = await axios.get(healthUrl, {
       timeout: 10000, // 10 second timeout for quick test
     });
     

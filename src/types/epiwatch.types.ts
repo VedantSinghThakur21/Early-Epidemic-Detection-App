@@ -4,25 +4,34 @@
 
 /**
  * Health Check Response
- * Endpoint: GET /api/v1/health
+ * Endpoint: GET /health
  */
 export interface HealthResponse {
   status: string;
   timestamp: string;
-  service: string;
-  version: string;
+  database?: string;
+  model?: string;
+  service?: string;
+  version?: string;
 }
 
 /**
  * Dashboard Statistics Response
- * Endpoint: GET /api/v1/statistics
+ * Endpoint: GET /stats
  */
 export interface DashboardStats {
-  total_outbreaks: number;
-  active_diseases: number;
-  affected_countries: number;
-  last_updated: string;
-  top_diseases: TopDisease[];
+  total_cases: number;
+  countries: number;
+  critical_alerts: number;
+  regions_monitored: number;
+  active_alerts: number;
+  last_update: string;
+  // Computed for backwards compatibility
+  total_outbreaks?: number;
+  active_diseases?: number;
+  affected_countries?: number;
+  last_updated?: string;
+  top_diseases?: TopDisease[];
 }
 
 export interface TopDisease {
@@ -34,55 +43,61 @@ export interface TopDisease {
 
 /**
  * Alert Response
- * Endpoint: GET /api/v1/alerts
+ * Endpoint: GET /alerts
  * 
- * Note: The API returns alerts as anomaly detections with severity scores
- * 
- * ⚠️ API Inconsistency:
- * - Query parameter: severity='medium'
- * - Response field: severity_level='moderate'
- * Our app handles this conversion automatically.
+ * New API format
  */
 export interface Alert {
-  id: string;
-  timestamp: string;
-  disease: string;
+  id: number;
+  title: string;
   location: string;
-  city_location: string;
-  context_description: string;
+  risk_level: 'critical' | 'high' | 'moderate' | 'low';
+  case_count: number;
   date: string;
-  actual_count: number;
-  expected_count: number;
-  deviation: number;
-  deviation_pct: number;
-  severity: number; // Severity score (0-100)
-  severity_level: 'critical' | 'high' | 'moderate' | 'low'; // API returns 'moderate' not 'medium'
-  anomaly_type: string;
-  z_score: number;
-  message: string;
+  summary: string;
+  color: string;
   
-  // Computed properties for UI compatibility
-  title?: string;
+  // Computed properties for backwards compatibility
+  timestamp?: string;
+  disease?: string;
+  city_location?: string;
+  context_description?: string;
+  actual_count?: number;
+  expected_count?: number;
+  deviation?: number;
+  deviation_pct?: number;
+  severity?: number;
+  severity_level?: 'critical' | 'high' | 'moderate' | 'low';
+  anomaly_type?: string;
+  z_score?: number;
+  message?: string;
   description?: string;
-  time?: string; // Relative time like "47 minutes ago"
+  time?: string;
 }
 
 /**
  * Map Outbreak Data
- * Endpoint: GET /api/v1/map
+ * Endpoint: GET /map
+ * New API format
  */
 export interface MapOutbreak {
-  id: string;
-  disease: string;
-  country: string;
-  iso3: string;
-  latitude: number;
-  longitude: number;
-  outbreak_count: number;
+  region: string;
   risk_level: 'critical' | 'high' | 'moderate' | 'low';
-  year: number;
+  alert_count: number;
+  color: string;
   
-  // Computed properties for UI compatibility
+  // Computed for backwards compatibility
+  id?: string;
+  disease?: string;
+  country?: string;
+  iso3?: string;
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  cases?: number;
+  outbreak_count?: number;
+  year?: number;
+  date?: string;
   location?: {
     name: string;
     country: string;
@@ -90,8 +105,8 @@ export interface MapOutbreak {
     lng: number;
   };
   severity?: 'critical' | 'high' | 'moderate' | 'low';
-  cases?: number;
 }
+
 
 /**
  * Disease Trend Data

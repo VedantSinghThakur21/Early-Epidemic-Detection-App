@@ -33,15 +33,22 @@ export default function TrendChart() {
   
   // Aggregate map data by year for yearly trends (2010-2025)
   const yearlyTrends = useMemo(() => {
-    if (!mapData || !stats || mapData.length === 0) return [];
+    if (!mapData || !stats || mapData.length === 0 || !availableDiseases || availableDiseases.length === 0) return [];
     
     const START_YEAR = 2010;
     const CURRENT_YEAR = new Date().getFullYear();
     
     return availableDiseases.map((disease) => {
+      // Add null check for disease
+      if (!disease || !disease.disease) {
+        return null;
+      }
+      
       // Filter map data for this disease within 2010-2025 range
       const diseaseData = mapData.filter(
         (outbreak) => 
+          outbreak?.disease && 
+          disease?.disease &&
           outbreak.disease.toLowerCase() === disease.disease.toLowerCase() &&
           outbreak.year >= START_YEAR &&
           outbreak.year <= CURRENT_YEAR
@@ -84,7 +91,7 @@ export default function TrendChart() {
         change_pct: disease.change_pct,
         severity: totalCount > 100 ? 'major' : totalCount > 50 ? 'moderate' : 'minor',
       };
-    });
+    }).filter(trend => trend !== null);
   }, [mapData, stats, availableDiseases]);
   
   if ((trendsLoading || statsLoading || mapLoading) && !trendsData && !stats && !mapData) {
@@ -152,6 +159,7 @@ export default function TrendChart() {
   
   // Get trend icon
   const getTrendIcon = () => {
+    if (!currentTrend) return <Minus size={14} color="#94a3b8" />;
     if (currentTrend.trend_direction === 'up') {
       return <TrendingUp size={14} color="#ef4444" />;
     } else if (currentTrend.trend_direction === 'down') {
@@ -167,6 +175,16 @@ export default function TrendChart() {
     if (currentStats?.trend === 'down') return '#10b981';
     return '#94a3b8';
   };
+  
+  // Guard against undefined currentTrend
+  if (!currentTrend) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text style={styles.loadingText}>Loading trends data...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -318,16 +336,16 @@ export default function TrendChart() {
         <View style={styles.statCard}>
           <View style={[styles.statIconContainer, { backgroundColor: `${diseaseColor}20` }]}>
             <Text style={[styles.statIcon, { color: diseaseColor }]}>
-              {currentTrend.disease[0].toUpperCase()}
+              {currentTrend?.disease?.[0]?.toUpperCase() || '?'}
             </Text>
           </View>
           <View style={styles.statInfo}>
-            <Text style={styles.statLabel}>{currentTrend.disease}</Text>
+            <Text style={styles.statLabel}>{currentTrend?.disease || 'Unknown'}</Text>
             <Text style={styles.statValue}>
-              {currentStats ? currentStats.current_count.toLocaleString() : currentTrend.total_count}
+              {currentStats ? currentStats.current_count.toLocaleString() : (currentTrend?.total_count || 0)}
             </Text>
             <Text style={styles.statDescription}>
-              {currentStats ? `Current outbreak count` : currentTrend.description}
+              {currentStats ? `Current outbreak count` : (currentTrend?.description || 'No data available')}
             </Text>
           </View>
           <View style={[styles.statTrendBadge, { backgroundColor: `${getTrendColor()}20` }]}>
@@ -335,7 +353,7 @@ export default function TrendChart() {
             <Text style={[styles.statTrendText, { color: getTrendColor() }]}>
               {currentStats 
                 ? `${currentStats.change_pct > 0 ? '+' : ''}${currentStats.change_pct}%`
-                : `${currentTrend.change_pct > 0 ? '+' : ''}${currentTrend.change_pct}%`
+                : `${(currentTrend?.change_pct || 0) > 0 ? '+' : ''}${currentTrend?.change_pct || 0}%`
               }
             </Text>
           </View>

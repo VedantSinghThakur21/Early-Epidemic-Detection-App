@@ -18,6 +18,17 @@ interface DisplayAlert extends Alert {
   severityLevel: 'critical' | 'high' | 'moderate' | 'low'; // For UI display
 }
 
+// Convert risk_level to numeric severity score
+const riskLevelToScore = (riskLevel: string): number => {
+  switch (riskLevel?.toLowerCase()) {
+    case 'critical': return 90;
+    case 'high': return 75;
+    case 'moderate': return 50;
+    case 'low': return 25;
+    default: return 0;
+  }
+};
+
 export default function AlertsList({ alerts: propAlerts, onAlertClick }: AlertsListProps) {
   // Fetch real-time alerts from API
   const { data: apiAlerts, loading, error, refetch, updateFilters } = useAlerts({ limit: 20 });
@@ -30,6 +41,8 @@ export default function AlertsList({ alerts: propAlerts, onAlertClick }: AlertsL
     time: new Date(alert.timestamp).toLocaleString(),
     // Keep severity_level for UI filtering
     severityLevel: alert.severity_level,
+    // Convert risk_level to numeric severity if not present
+    severity: alert.severity ?? riskLevelToScore(alert.risk_level),
   }));
   
   // Use prop alerts if provided (for backwards compatibility), otherwise use transformed API data
@@ -184,23 +197,25 @@ export default function AlertsList({ alerts: propAlerts, onAlertClick }: AlertsL
               {/* Severity Score */}
               <View style={styles.severityScoreContainer}>
                 <Text style={styles.severityScoreLabel}>Severity Score:</Text>
-                <Text style={styles.severityScoreValue}>{alert.severity.toFixed(1)}/100</Text>
+                <Text style={styles.severityScoreValue}>
+                  {alert.severity != null ? alert.severity.toFixed(1) : 'N/A'}/100
+                </Text>
               </View>
               
               {/* Case Statistics */}
               <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Actual Cases</Text>
-                  <Text style={styles.statValue}>{alert.actual_count}</Text>
+                  <Text style={styles.statValue}>{alert.actual_count ?? 'N/A'}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Expected</Text>
-                  <Text style={styles.statValue}>{alert.expected_count}</Text>
+                  <Text style={styles.statValue}>{alert.expected_count ?? 'N/A'}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Deviation</Text>
                   <Text style={[styles.statValue, styles.deviationValue]}>
-                    +{alert.deviation_pct.toFixed(0)}%
+                    {alert.deviation_pct != null ? `+${alert.deviation_pct.toFixed(0)}%` : 'N/A'}
                   </Text>
                 </View>
               </View>
@@ -217,7 +232,7 @@ export default function AlertsList({ alerts: propAlerts, onAlertClick }: AlertsL
                   <Text style={styles.footerText}>{new Date(alert.date).toLocaleDateString()}</Text>
                 </View>
               </View>
-              <TouchableOpacity style={styles.investigateButton} onPress={() => onAlertClick?.(alert.id)}>
+              <TouchableOpacity style={styles.investigateButton} onPress={() => onAlertClick?.(String(alert.id))}>
                 <Text style={styles.investigateButtonText}>Investigate Alert</Text>
               </TouchableOpacity>
             </View>
