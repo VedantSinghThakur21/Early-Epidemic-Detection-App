@@ -1,27 +1,48 @@
 
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
-import { Brain, Mail, Lock, AlertCircle, Monitor } from "lucide-react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
+import { Brain, Mail, Lock, AlertCircle, Monitor, Eye, EyeOff } from "lucide-react-native";
+import { useAuth } from "../contexts/AuthContext";
 
 interface LoginScreenProps {
-  onLogin: () => void;
+  onNavigateToRegister?: () => void;
 }
 
-export default function LoginScreen({ onLogin }: LoginScreenProps) {
+export default function LoginScreen({ onNavigateToRegister }: LoginScreenProps) {
+  const { login, loading, error: authError, clearError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    // Simple validation
+  const handleLogin = async () => {
+    // Clear previous errors
+    setError("");
+    clearError();
+    
+    // Validation
     if (!email || !password) {
       setError("Please enter both email and password");
       return;
     }
 
-    // Demo authentication - any email/password works
-    setError("");
-    onLogin();
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    // Attempt login
+    const result = await login({ email, password });
+    
+    if (!result.success) {
+      setError(result.message);
+    }
+    // If successful, AuthContext will update isAuthenticated and App will re-render
   };
 
   return (
@@ -87,23 +108,38 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                     value={password}
                     onChangeText={setPassword}
                     style={styles.input}
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                   />
+                  <TouchableOpacity 
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeIcon}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={16} color="#94a3b8" />
+                    ) : (
+                      <Eye size={16} color="#94a3b8" />
+                    )}
+                  </TouchableOpacity>
                 </View>
               </View>
 
-              {error && (
+              {(error || authError) && (
                 <View style={styles.errorContainer}>
                   <AlertCircle size={16} color="#f87171" />
-                  <Text style={styles.errorText}>{error}</Text>
+                  <Text style={styles.errorText}>{error || authError}</Text>
                 </View>
               )}
 
               <TouchableOpacity 
                 onPress={handleLogin}
-                style={styles.button}
+                disabled={loading}
+                style={[styles.button, loading && styles.buttonDisabled]}
               >
-                <Text style={styles.buttonText}>Sign In</Text>
+                {loading ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.buttonText}>Sign In</Text>
+                )}
               </TouchableOpacity>
             </View>
 
@@ -117,8 +153,23 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           {/* Demo Credentials Info */}
           <View style={styles.demoInfoCard}>
             <Text style={styles.demoInfoTitle}>Demo Access</Text>
-            <Text style={styles.demoInfoText}>Enter any email and password to access the dashboard</Text>
+            <Text style={styles.demoInfoText}>
+              Email: kavita@health.gov.in{'\n'}
+              Password: any password (min 6 characters)
+            </Text>
           </View>
+
+          {/* Register Link */}
+          {onNavigateToRegister && (
+            <TouchableOpacity
+              style={styles.registerLink}
+              onPress={onNavigateToRegister}
+            >
+              <Text style={styles.registerText}>
+                Don't have an account? <Text style={styles.registerLinkText}>Sign Up</Text>
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {/* Footer */}
           <View style={styles.footer}>
@@ -245,7 +296,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingLeft: 40,
+    paddingRight: 40,
     color: '#e2e8f0',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+    zIndex: 1,
   },
   errorContainer: {
     flexDirection: 'row',
@@ -266,6 +323,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: 'white',
@@ -289,16 +349,30 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   demoInfoText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#94a3b8',
+    lineHeight: 16,
     textAlign: 'center',
   },
-  footer: {
+  registerLink: {
+    marginTop: 16,
     alignItems: 'center',
+  },
+  registerText: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  registerLinkText: {
+    color: '#3b82f6',
+    fontWeight: '600',
+  },
+  footer: {
+    marginTop: 16,
     gap: 4,
   },
   footerText: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#64748b',
+    textAlign: 'center',
   },
 });

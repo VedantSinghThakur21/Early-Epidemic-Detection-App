@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { User, Bell, Settings, Shield, HelpCircle, LogOut, ChevronRight, Mail, MapPin, Briefcase } from 'lucide-react-native';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProfileScreenProps {
   onNavigate: (screen: string) => void;
@@ -9,12 +10,29 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ onNavigate, onLogout }: ProfileScreenProps) {
+  const { user, logout } = useAuth();
+  
   const menuItems = [
     { icon: Bell, label: 'Notifications', badge: '3', screen: 'notifications' },
     { icon: Settings, label: 'Settings', screen: 'settings' },
     { icon: Shield, label: 'Privacy & Security', screen: 'privacy' },
     { icon: HelpCircle, label: 'Help & Support', screen: 'help' },
   ];
+
+  const handleLogout = async () => {
+    await logout();
+    onLogout();
+  };
+
+  // Get initials from name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -25,26 +43,28 @@ export default function ProfileScreen({ onNavigate, onLogout }: ProfileScreenPro
       <View style={styles.profileCard}>
         <View style={styles.profileInfoContainer}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarFallback}>DK</Text>
+            <Text style={styles.avatarFallback}>
+              {user ? getInitials(user.name) : 'NA'}
+            </Text>
           </View>
           <View>
-            <Text style={styles.profileName}>Dr. Kavita Desai</Text>
-            <Text style={styles.profileRole}>Health Official</Text>
+            <Text style={styles.profileName}>{user?.name || 'Guest User'}</Text>
+            <Text style={styles.profileRole}>{user?.role || 'No Role'}</Text>
           </View>
         </View>
         <View style={styles.separator} />
         <View style={styles.contactInfoContainer}>
           <View style={styles.contactRow}>
             <Mail size={16} color="#94a3b8" />
-            <Text style={styles.contactText}>k.desai@health.gov.in</Text>
+            <Text style={styles.contactText}>{user?.email || 'No email'}</Text>
           </View>
           <View style={styles.contactRow}>
             <Briefcase size={16} color="#94a3b8" />
-            <Text style={styles.contactText}>Mumbai Health Department</Text>
+            <Text style={styles.contactText}>{user?.organization || 'No organization'}</Text>
           </View>
           <View style={styles.contactRow}>
             <MapPin size={16} color="#94a3b8" />
-            <Text style={styles.contactText}>Mumbai, Maharashtra</Text>
+            <Text style={styles.contactText}>{user?.location || 'No location'}</Text>
           </View>
         </View>
       </View>
@@ -70,7 +90,7 @@ export default function ProfileScreen({ onNavigate, onLogout }: ProfileScreenPro
         ))}
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <LogOut size={16} color="#f87171" />
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>

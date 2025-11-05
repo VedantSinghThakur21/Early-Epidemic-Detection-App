@@ -26,6 +26,7 @@ import AlertDetailScreen from "./components/AlertDetailScreen";
 import ProfileScreen from "./components/ProfileScreen";
 import BottomNavigation, { NavTab } from "./components/BottomNavigation";
 import LoginScreen from "./components/LoginScreen";
+import RegisterScreen from "./components/RegisterScreen";
 import NotificationsScreen from "./components/NotificationsScreen";
 import SettingsScreen from "./components/SettingsScreen";
 import PrivacySecurityScreen from "./components/PrivacySecurityScreen";
@@ -35,6 +36,9 @@ import QuickStartGuide from "./components/QuickStartGuide";
 // Import API hooks
 import { useDashboardStats, useMapData, useAlerts } from "./hooks/useEpiWatch";
 import epiwatchService from "./services/epiwatchService";
+
+// Import Auth
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 
 // Mock data - Global Multi-Country Dataset
@@ -168,28 +172,29 @@ const MOCK_TREND_DATA = [
 ];
 
 type ScreenType = 
-  | "login" 
   | "dashboard" 
   | "alertDetail" 
   | "notifications" 
   | "settings" 
   | "privacy" 
   | "help"
-  | "quickStart";
+  | "quickStart"
+  | "register";
 
-export default function App() {
+function MainApp() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   // Fetch real-time data from API
   const { data: dashboardStats, loading: statsLoading, refetch: refetchStats } = useDashboardStats();
   const { data: mapOutbreaks, loading: mapLoading, refetch: refetchMap } = useMapData();
   const { data: apiAlerts, loading: alertsLoading, refetch: refetchAlerts } = useAlerts({ limit: 20 });
   
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>("login");
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>("dashboard");
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<NavTab>("alerts");
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
   const [showQuickStart, setShowQuickStart] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
   
   // Wake up API on mount
   useEffect(() => {
@@ -211,16 +216,8 @@ export default function App() {
   const countriesMonitored = dashboardStats?.affected_countries || 0;
   const activeDiseases = dashboardStats?.active_diseases || 0;
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    setCurrentScreen("dashboard");
-    // Show quick start guide on first login
-    setShowQuickStart(true);
-  };
-
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentScreen("login");
+    setCurrentScreen("dashboard");
     setActiveTab("alerts");
     setSelectedAlert(null);
     setShowQuickStart(false);
@@ -240,8 +237,8 @@ export default function App() {
     });
   };
 
-  const handleAlertClick = (alertId: number) => {
-    const alert = apiAlerts?.find(a => a.id === alertId);
+  const handleAlertClick = (alertId: string | number) => {
+    const alert = apiAlerts?.find(a => String(a.id) === String(alertId));
     if (alert) {
       setSelectedAlert(alert);
       setCurrentScreen("alertDetail");
@@ -284,13 +281,37 @@ export default function App() {
     setShowQuickStart(true);
   };
 
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={[styles.loginContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color="#3b82f6" />
+          <Text style={{ color: 'white', marginTop: 16 }}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Show login screen if not authenticated
-  if (!isAuthenticated || currentScreen === "login") {
+  if (!isAuthenticated) {
+    if (showRegister) {
+      return (
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="light-content" />
+          <View style={styles.loginContainer}>
+            <RegisterScreen onBackToLogin={() => setShowRegister(false)} />
+          </View>
+        </SafeAreaView>
+      );
+    }
+    
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
         <View style={styles.loginContainer}>
-            <LoginScreen onLogin={handleLogin} />
+          <LoginScreen onNavigateToRegister={() => setShowRegister(true)} />
         </View>
       </SafeAreaView>
     );
@@ -659,3 +680,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   }
 });
+
+// Wrap MainApp with AuthProvider
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
+  );
+}
