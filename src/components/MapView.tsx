@@ -1,16 +1,21 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, TextInput, Platform } from 'react-native';
-import Svg, { Circle, G } from 'react-native-svg';
 import { Badge } from './ui/badge';
-import { MapPin, AlertTriangle, Search, X } from 'lucide-react-native';
+import { MapPin, AlertTriangle, Search, X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react-native';
 import { useMapData } from '../hooks/useEpiWatch';
 import { MapOutbreak } from '../types/epiwatch.types';
+
+// Conditional import for React Native Maps (only works in native builds, not web)
+let MapView: any = null;
+let Marker: any = null;
+let Callout: any = null;
+let PROVIDER_DEFAULT: any = null;
 
 interface MapViewProps {
   outbreaks?: MapOutbreak[]; // Made optional for backwards compatibility
 }
 
-export default function MapView({ outbreaks: propOutbreaks }: MapViewProps) {
+export default function OutbreakMapView({ outbreaks: propOutbreaks }: MapViewProps) {
   // State declarations
   const [selectedOutbreak, setSelectedOutbreak] = useState<MapOutbreak | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
@@ -19,6 +24,13 @@ export default function MapView({ outbreaks: propOutbreaks }: MapViewProps) {
   const [selectedDisease, setSelectedDisease] = useState<string | null>(null);
   const [expandedDiseases, setExpandedDiseases] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grouped' | 'expanded'>('grouped');
+  
+  // Map ref for programmatic control
+  const mapRef = useRef<any>(null);
+  
+  // Always use static fallback map with interactive markers
+  // This works reliably across all platforms without API keys
+  const isNativeMapsAvailable = false;
   
   // Fetch real-time map data from API
   const { data: apiOutbreaks, loading, error, refetch } = useMapData();
@@ -164,13 +176,55 @@ export default function MapView({ outbreaks: propOutbreaks }: MapViewProps) {
 
   const handleMarkerPress = (outbreak: MapOutbreak) => {
     setSelectedOutbreak(outbreak);
+    
+    // Animate to marker location if coordinates exist
+    if (mapRef.current && outbreak.location?.lat && outbreak.location?.lng) {
+      mapRef.current.animateToRegion({
+        latitude: outbreak.location.lat,
+        longitude: outbreak.location.lng,
+        latitudeDelta: 10,
+        longitudeDelta: 10,
+      }, 1000);
+    }
   };
 
-  // Convert lat/lng to SVG coordinates (simplified projection)
-  const projectCoordinates = (lat: number, lng: number) => {
-    const x = ((lng + 180) / 360) * 500;
-    const y = ((90 - lat) / 180) * 250;
-    return { x, y };
+  // Zoom controls
+  const handleZoomIn = () => {
+    if (mapRef.current) {
+      mapRef.current.animateCamera({ zoom: 1 }, { duration: 500 });
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapRef.current) {
+      mapRef.current.animateCamera({ zoom: -1 }, { duration: 500 });
+    }
+  };
+
+  // Fit all markers in view
+  const fitAllMarkers = () => {
+    if (mapRef.current && filteredOutbreaks.length > 0) {
+      const coordinates = filteredOutbreaks
+        .filter(o => o.location?.lat && o.location?.lng)
+        .map(o => ({
+          latitude: o.location!.lat,
+          longitude: o.location!.lng,
+        }));
+      
+      if (coordinates.length > 0) {
+        mapRef.current.fitToCoordinates(coordinates, {
+          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          animated: true,
+        });
+      }
+    }
+  };
+
+  // Equirectangular projection for 2:1 world map image (no distortion assumptions)
+  const projectToEquirectangular = (lat: number, lng: number) => {
+    const x = (lng + 180) / 360; // 0..1 across width
+    const y = (90 - lat) / 180; // 0..1 down height
+    return { x: x * 100, y: y * 100 };
   };
 
   return (
@@ -218,82 +272,243 @@ export default function MapView({ outbreaks: propOutbreaks }: MapViewProps) {
           <Text style={styles.liveText}>Live</Text>
         </View>
         
-        {/* World Map - Using OpenStreetMap free tile service */}
-        <View style={{ flex: 1, position: 'relative', backgroundColor: '#0a1929' }}>
-          {/* Real world map from OpenStreetMap (free tile service) */}
-          <Image
-            source={{ uri: 'https://tile.openstreetmap.org/0/0/0.png' }}
-            style={{ 
-              width: '100%', 
-              height: '100%',
-              opacity: 0.5
-            }}
-            resizeMode="cover"
-          />
-          
-          {/* Dark overlay for dark mode effect */}
-          <View style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 41, 66, 0.6)'
-          }} />
-          
-          {/* Interactive outbreak markers overlaid on top */}
-          <Svg 
-            width="100%" 
-            height="100%" 
-            viewBox="0 0 500 250" 
-            style={{ position: 'absolute', top: 0, left: 0 }}
-          >
+        {/* Interactive Map with React Native Maps (Native) or Static Map (Web) */}
+        {isNativeMapsAvailable ? (
+          // Native Maps for iOS/Android
+        <MapView
+          ref={mapRef}
+          provider={PROVIDER_DEFAULT}
+          style={styles.map}
+          initialRegion={{
+            latitude: 20,
+            longitude: 20,
+            latitudeDelta: 80,
+            longitudeDelta: 80,
+          }}
+          mapType="standard"
+          showsUserLocation={false}
+          showsMyLocationButton={false}
+          showsCompass={true}
+          showsScale={true}
+          zoomEnabled={true}
+          scrollEnabled={true}
+          pitchEnabled={false}
+          rotateEnabled={false}
+          loadingEnabled={true}
+          onMapReady={fitAllMarkers}
+        >
           {filteredOutbreaks.map((outbreak) => {
             // Skip if location data is not available
             if (!outbreak.location?.lat || !outbreak.location?.lng) {
               return null;
             }
             
-            const { x, y } = projectCoordinates(outbreak.location.lat, outbreak.location.lng);
             const color = getSeverityColor(outbreak.severity || 'low');
             const isSelected = selectedOutbreak?.id === outbreak.id;
             
             return (
-              <G key={outbreak.id}>
-                {/* Pulsing outer circle */}
-                <Circle 
-                  cx={x} 
-                  cy={y} 
-                  r={isSelected ? "18" : "14"} 
-                  fill="none" 
-                  stroke={color} 
-                  strokeWidth={isSelected ? "3" : "2.5"} 
-                  opacity={isSelected ? "0.6" : "0.3"} 
-                />
-                <Circle 
-                  cx={x} 
-                  cy={y} 
-                  r={isSelected ? "12" : "10"} 
-                  fill="none" 
-                  stroke={color} 
-                  strokeWidth="2" 
-                  opacity={isSelected ? "0.8" : "0.5"} 
-                />
-                {/* Inner dot - Make it touchable */}
-                <Circle 
-                  cx={x} 
-                  cy={y} 
-                  r={isSelected ? "7" : "5"} 
-                  fill={color} 
-                  stroke="white" 
-                  strokeWidth={isSelected ? "2.5" : "1.5"}
-                  onPress={() => handleMarkerPress(outbreak)}
-                />
-              </G>
+              <Marker
+                key={outbreak.id}
+                coordinate={{
+                  latitude: outbreak.location.lat,
+                  longitude: outbreak.location.lng,
+                }}
+                pinColor={color}
+                onPress={() => handleMarkerPress(outbreak)}
+                title={outbreak.disease}
+                description={`${outbreak.country} • ${(outbreak.totalCases || outbreak.cases || 0).toLocaleString()} cases`}
+              >
+                {/* Custom marker with pulsing effect */}
+                <View style={styles.customMarkerContainer}>
+                  {/* Pulsing outer ring for selected marker */}
+                  {isSelected && (
+                    <View 
+                      style={[
+                        styles.markerPulse, 
+                        { borderColor: color }
+                      ]} 
+                    />
+                  )}
+                  {/* Marker dot */}
+                  <View 
+                    style={[
+                      styles.markerDot, 
+                      { 
+                        backgroundColor: color,
+                        width: isSelected ? 24 : 18,
+                        height: isSelected ? 24 : 18,
+                        borderRadius: isSelected ? 12 : 9,
+                      }
+                    ]} 
+                  />
+                </View>
+                
+                {/* Callout with outbreak details */}
+                <Callout tooltip onPress={() => handleMarkerPress(outbreak)}>
+                  <View style={styles.calloutContainer}>
+                    <View style={styles.calloutHeader}>
+                      <Text style={styles.calloutTitle}>{outbreak.disease}</Text>
+                      <Badge 
+                        variant={
+                          outbreak.severity === 'high' 
+                            ? 'destructive' 
+                            : outbreak.severity === 'moderate' 
+                              ? 'default' 
+                              : 'secondary'
+                        }
+                      >
+                        {outbreak.severity?.toUpperCase()}
+                      </Badge>
+                    </View>
+                    <View style={styles.calloutDivider} />
+                    <View style={styles.calloutBody}>
+                      <View style={styles.calloutRow}>
+                        <MapPin size={14} color="#60a5fa" />
+                        <Text style={styles.calloutLocation}>
+                          {outbreak.country}
+                        </Text>
+                      </View>
+                      <View style={styles.calloutRow}>
+                        <Text style={styles.calloutLabel}>Cases:</Text>
+                        <Text style={styles.calloutValue}>
+                          {(outbreak.totalCases || outbreak.cases || outbreak.outbreak_count || 0).toLocaleString()}
+                        </Text>
+                      </View>
+                      {outbreak.outbreakCount > 1 && (
+                        <View style={styles.calloutRow}>
+                          <Text style={styles.calloutLabel}>Reports:</Text>
+                          <Text style={styles.calloutValue}>{outbreak.outbreakCount}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.calloutFooter}>
+                      <Text style={styles.calloutHint}>Tap for more details</Text>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
             );
           })}
-          </Svg>
+        </MapView>
+        ) : (
+          // Fallback Web/Expo Go Map - Interactive Clickable Overlay
+          <View style={styles.webMapContainer}>
+            {/* World map background (2:1 equirectangular) - no API key needed */}
+            <View style={styles.webMapAspectBox}>
+              <Image
+                source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/World_map_-_low_resolution.svg/1024px-World_map_-_low_resolution.svg.png' }}
+                style={styles.webMapImage}
+                resizeMode="cover"
+              />
+              {/* Clickable markers overlay */}
+              <View style={styles.markersOverlay}>
+                {filteredOutbreaks.map((outbreak, index) => {
+                  if (!outbreak.location?.lat || !outbreak.location?.lng) return null;
+                  // Equirectangular projection to align with 2:1 image
+                  const { x, y } = projectToEquirectangular(outbreak.location.lat, outbreak.location.lng);
+                  const color = getSeverityColor(outbreak.severity || 'low');
+                  const isSelected = selectedOutbreak?.id === outbreak.id;
+                  return (
+                    <TouchableOpacity
+                      key={outbreak.id}
+                      style={[
+                        styles.webMarker,
+                        {
+                          left: `${x}%`,
+                          top: `${y}%`,
+                          backgroundColor: color,
+                          transform: [
+                            { translateX: -8 },
+                            { translateY: -8 },
+                            { scale: isSelected ? 1.5 : 1 },
+                          ],
+                          zIndex: isSelected ? 100 : index,
+                        }
+                      ]}
+                      onPress={() => handleMarkerPress(outbreak)}
+                    >
+                      {isSelected && (
+                        <View style={[styles.webMarkerPulse, { borderColor: color }]} />)
+                      }
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+            
+            {/* Selected outbreak info card */}
+            {selectedOutbreak && (
+              <View style={styles.webInfoCard}>
+                <TouchableOpacity 
+                  style={styles.webInfoClose}
+                  onPress={() => setSelectedOutbreak(null)}
+                >
+                  <X size={16} color="white" />
+                </TouchableOpacity>
+                <View style={styles.webInfoHeader}>
+                  <Text style={styles.webInfoTitle}>{selectedOutbreak.disease}</Text>
+                  <Badge 
+                    variant={
+                      selectedOutbreak.severity === 'high' 
+                        ? 'destructive' 
+                        : selectedOutbreak.severity === 'moderate' 
+                          ? 'default' 
+                          : 'secondary'
+                    }
+                  >
+                    {selectedOutbreak.severity?.toUpperCase()}
+                  </Badge>
+                </View>
+                <View style={styles.webInfoBody}>
+                  <View style={styles.webInfoRow}>
+                    <MapPin size={14} color="#60a5fa" />
+                    <Text style={styles.webInfoLocation}>{selectedOutbreak.country}</Text>
+                  </View>
+                  <View style={styles.webInfoRow}>
+                    <Text style={styles.webInfoLabel}>Cases:</Text>
+                    <Text style={styles.webInfoValue}>
+                      {((selectedOutbreak as any).totalCases || selectedOutbreak.cases || selectedOutbreak.outbreak_count || 0).toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+            
+          </View>
+        )}
+
+        {/* Zoom Controls (Native only) */}
+        {isNativeMapsAvailable && (
+        <View style={styles.zoomControls}>
+          <TouchableOpacity 
+            style={styles.zoomButton} 
+            onPress={handleZoomIn}
+            activeOpacity={0.7}
+          >
+            <ZoomIn size={20} color="white" />
+          </TouchableOpacity>
+          <View style={styles.zoomDivider} />
+          <TouchableOpacity 
+            style={styles.zoomButton} 
+            onPress={handleZoomOut}
+            activeOpacity={0.7}
+          >
+            <ZoomOut size={20} color="white" />
+          </TouchableOpacity>
         </View>
+        )}
+
+        {/* Fit All Markers Button (Native only) */}
+        {isNativeMapsAvailable && (
+        <TouchableOpacity 
+          style={styles.fitMarkersButton}
+          onPress={fitAllMarkers}
+          activeOpacity={0.7}
+        >
+          <MapPin size={16} color="white" />
+          <Text style={styles.fitMarkersText}>Fit All</Text>
+        </TouchableOpacity>
+        )}
 
         {/* Map Legend */}
         <View style={styles.mapLegend}>
@@ -873,5 +1088,332 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94a3b8',
     fontWeight: 'bold',
+  },
+  // Callout styles
+  calloutContainer: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 14,
+    minWidth: 220,
+    maxWidth: 280,
+    borderWidth: 2,
+    borderColor: '#3b82f6',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 10,
+      },
+    }),
+  },
+  calloutHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  calloutTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+    flex: 1,
+    marginRight: 8,
+  },
+  calloutDivider: {
+    height: 1,
+    backgroundColor: '#334155',
+    marginVertical: 8,
+  },
+  calloutBody: {
+    gap: 8,
+  },
+  calloutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  calloutLocation: {
+    fontSize: 14,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  calloutLabel: {
+    fontSize: 13,
+    color: '#94a3b8',
+  },
+  calloutValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#60a5fa',
+  },
+  calloutFooter: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  calloutHint: {
+    fontSize: 11,
+    color: '#64748b',
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  // Zoom controls
+  zoomControls: {
+    position: 'absolute',
+    top: 60,
+    right: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#475569',
+    zIndex: 10,
+  },
+  zoomButton: {
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoomDivider: {
+    height: 1,
+    backgroundColor: '#475569',
+  },
+  fitMarkersButton: {
+    position: 'absolute',
+    top: 60,
+    left: 12,
+    backgroundColor: 'rgba(59, 130, 246, 0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+  },
+  fitMarkersText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  // Web/Fallback map styles
+  webMapContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  webMapImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  markersOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  webMapAspectBox: {
+    width: '100%',
+    aspectRatio: 2, // 2:1 world image
+    overflow: 'hidden',
+    borderRadius: 12,
+  },
+  webMarker: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'white',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)',
+        cursor: 'pointer',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.6,
+        shadowRadius: 4,
+        elevation: 5,
+      },
+    }),
+  },
+  webMarkerPulse: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 3,
+    top: -8,
+    left: -8,
+    opacity: 0.5,
+  },
+  webInfoCard: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#3b82f6',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 10,
+      },
+    }),
+  },
+  webInfoClose: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#334155',
+    borderRadius: 12,
+    padding: 6,
+  },
+  webInfoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  webInfoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    flex: 1,
+    marginRight: 12,
+  },
+  webInfoBody: {
+    gap: 10,
+  },
+  webInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  webInfoLocation: {
+    fontSize: 15,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  webInfoLabel: {
+    fontSize: 14,
+    color: '#94a3b8',
+  },
+  webInfoValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#60a5fa',
+  },
+  webMapBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
+  webMapBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  webMapBadgeHint: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontStyle: 'italic',
+  },
+  // Simple world map visualization
+  webMapTilesContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#0a1929',
+  },
+  webMapBackground: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#0f1624',
+    position: 'relative',
+  },
+  worldMapGrid: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  // Stylized continents with visible borders
+  continentAfrica: {
+    position: 'absolute',
+    width: '15%',
+    height: '30%',
+    backgroundColor: '#1e3a5f',
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    left: '48%',
+    top: '42%',
+    borderRadius: 20,
+    opacity: 0.8,
+  },
+  continentAsia: {
+    position: 'absolute',
+    width: '30%',
+    height: '35%',
+    backgroundColor: '#1e3a5f',
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    left: '55%',
+    top: '25%',
+    borderRadius: 30,
+    opacity: 0.8,
+  },
+  continentEurope: {
+    position: 'absolute',
+    width: '12%',
+    height: '18%',
+    backgroundColor: '#1e3a5f',
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    left: '48%',
+    top: '28%',
+    borderRadius: 15,
+    opacity: 0.8,
+  },
+  continentAmericas: {
+    position: 'absolute',
+    width: '18%',
+    height: '45%',
+    backgroundColor: '#1e3a5f',
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    left: '18%',
+    top: '30%',
+    borderRadius: 25,
+    opacity: 0.8,
   },
 });

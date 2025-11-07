@@ -21,10 +21,19 @@
       "adaptiveIcon": {
         "backgroundColor": "#0f172a"
       },
-      "package": "com.shoppingapp"
+      "package": "com.shoppingapp",
+      "splash": {
+        "backgroundColor": "#0f172a",
+        "resizeMode": "contain"
+      }
     },
     "web": {
       "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0d767ef1-350f-45db-9d1c-907e5d0cbcc2"
+      }
     }
   }
 }
