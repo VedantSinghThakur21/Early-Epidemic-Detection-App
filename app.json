@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "ShoppingApp",
-    "slug": "shopping-app",
+    "name": "Sentinel AI",
+    "slug": "sentinel-ai-epidemic-monitor",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "resizeMode": "contain",
@@ -15,13 +15,18 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shoppingapp"
+      "bundleIdentifier": "com.sentinelai.epidemicmonitor"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0f172a"
       },
-      "package": "com.shoppingapp",
+      "package": "com.sentinelai.epidemicmonitor",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
       "splash": {
         "backgroundColor": "#0f172a",
         "resizeMode": "contain"

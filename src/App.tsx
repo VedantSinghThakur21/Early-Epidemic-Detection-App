@@ -15,7 +15,8 @@ import {
   RefreshCw,
   Globe,
   Shield,
-  Brain
+  Brain,
+  Video
 } from "lucide-react-native";
 
 // Import components
@@ -32,6 +33,7 @@ import SettingsScreen from "./components/SettingsScreen";
 import PrivacySecurityScreen from "./components/PrivacySecurityScreen";
 import HelpSupportScreen from "./components/HelpSupportScreen";
 import QuickStartGuide from "./components/QuickStartGuide";
+import DemoVideoScreen from "./components/DemoVideoScreen";
 
 // Import API hooks
 import { useDashboardStats, useMapData, useAlerts } from "./hooks/useEpiWatch";
@@ -179,7 +181,8 @@ type ScreenType =
   | "privacy" 
   | "help"
   | "quickStart"
-  | "register";
+  | "register"
+  | "demoVideo";
 
 function MainApp() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -402,6 +405,21 @@ function MainApp() {
     );
   }
 
+  // Show Demo Video Screen
+  if (currentScreen === "demoVideo") {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.mainContainer}>
+          <View style={{flex: 1}}>
+            <DemoVideoScreen onBack={() => setCurrentScreen("dashboard")} />
+          </View>
+          <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Show Alert Detail Screen
   if (currentScreen === "alertDetail" && selectedAlert) {
     return (
@@ -444,6 +462,12 @@ function MainApp() {
                 </View>
               </View>
               <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
+                <TouchableOpacity 
+                  style={styles.videoButton}
+                  onPress={() => setCurrentScreen("demoVideo")}
+                >
+                  <Video size={16} color="white" />
+                </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.refreshButton}
                   onPress={handleRefresh}
@@ -591,6 +615,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
     backgroundColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  videoButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#8b5cf6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#a78bfa',
   },
   notificationButton: {
     width: 40,
